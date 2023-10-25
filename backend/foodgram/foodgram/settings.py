@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'api.apps.ApiConfig',
+    'recipes.apps.RecipesConfig',
+    'core.apps.CoreConfig',
     'djoser',
     'rest_framework_simplejwt',
     'rest_framework.authtoken',

@@ -10,7 +10,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 
 
-from .serializers import UserSerializer
+from .serializers import UserSerializer, TagSerializer
+from recipes.models import Tag
 
 User = get_user_model()
 
@@ -43,3 +44,8 @@ class UserMe(APIView):
         serializer.save()
         return self.get(request)
 
+
+class TagsViewSet(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    lookup_field = 'slug'
