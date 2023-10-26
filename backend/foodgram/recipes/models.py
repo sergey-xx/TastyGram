@@ -39,14 +39,20 @@ class Recipe(models.Model):
                                on_delete=models.CASCADE,
                                verbose_name='Автор')
     tags = models.ManyToManyField(Tag,
+                                  blank=True,
                                   related_name='recipe',
                                   verbose_name='Теги')
     image = models.ImageField('Картинка', )
     name = models.CharField('Название',
                             max_length=200)
     text = models.TextField('Рецепт', )
-    cooking_time = models.IntegerField('Время приготовления',
+    cooking_time = models.IntegerField('Время приготовления, мин',
                                        validators=[time_validator, ])
+    ingredients = models.ManyToManyField(Ingredient,
+                                         through='RecipeIngredient',)
+
+    def __str__(self) -> str:
+        return self.name
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -55,12 +61,20 @@ class Recipe(models.Model):
 
 class RecipeIngredient(models.Model):
     """Класс связи рецептов с ингредиентами"""
+    amount = models.IntegerField()
     ingredient = models.ForeignKey(Ingredient,
                                    on_delete=models.CASCADE,
                                    blank=False,
-                                   verbose_name='Ингредиент')
+                                   verbose_name='Ингредиент',
+                                   related_name='recipeingredient' )
     recipe = models.ForeignKey(Recipe,
                                on_delete=models.CASCADE,
-                               related_name='ingredients',
-                               verbose_name='Рецепт')
-    amount = models.IntegerField('Количество', )
+                               verbose_name='Рецепт',
+                               related_name='recipeingredient')
+
+    def __str__(self) -> str:
+        return self.ingredient + self.recipe + self.amount
+
+    class Meta:
+        verbose_name = 'Ингредиент/рецепт'
+        verbose_name_plural = 'Ингредиенты/рецепты'

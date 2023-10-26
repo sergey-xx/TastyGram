@@ -10,8 +10,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 
 
-from .serializers import UserSerializer, TagSerializer
-from recipes.models import Tag
+from recipes.models import Tag, Recipe, RecipeIngredient
+from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
+                          RecipeIngredientSerializer, RecipeCreateSerializer)
 
 User = get_user_model()
 
@@ -49,3 +50,14 @@ class TagsViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     lookup_field = 'slug'
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'create' or self.action == 'partial_update':
+            return RecipeCreateSerializer
+        return super().get_serializer_class()

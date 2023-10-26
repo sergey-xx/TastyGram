@@ -1,10 +1,11 @@
-import os
+from django.core.management.base import BaseCommand
+from recipes.models import Recipe
 
 
-print(os.getcwd())
-# os.chdir('..')
-os.chdir('data')
-print(os.getcwd())
-# print(os.listdir())
-# os.chdir('data')
-print(os.getcwd())
+class Command(BaseCommand):
+    help = 'Command to import ingredients'
+
+    def handle(self, *args, **options):
+        recipe = Recipe.objects.all().first()
+        
+        print(recipe.ingredients)

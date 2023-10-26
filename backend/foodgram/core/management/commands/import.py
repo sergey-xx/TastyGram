@@ -6,6 +6,7 @@ from recipes.models import Ingredient
 
 
 def ingredient_import_json():
+    """Импорт объектов ингредиентов из json-файла"""
     os.chdir('..')
     os.chdir('..')
     os.chdir('data')
