@@ -6,8 +6,10 @@ from rest_framework.utils import model_meta
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.core.files.base import ContentFile
+from collections import OrderedDict
 
-from recipes.models import Tag, Recipe, RecipeIngredient, Ingredient, Favorite
+from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient, Favorite,
+                            ShoppingCart)
 
 User = get_user_model()
 
@@ -117,6 +119,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         fields = ('id',
@@ -127,12 +130,18 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'name',
                   'text',
                   'is_favorited',
+                  'is_in_shopping_cart',
                   )
         model = Recipe
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
         favorite = Favorite.objects.filter(user=user, recipe=obj)
+        return favorite.exists()
+
+    def get_is_in_shopping_cart(self, obj):
+        user = self.context.get('request').user
+        favorite = ShoppingCart.objects.filter(user=user, recipe=obj)
         return favorite.exists()
 
 
@@ -195,3 +204,21 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                   'cooking_time')
         model = Recipe
 
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    name = serializers.StringRelatedField(source='recipe.name')
+    cooking_time = serializers.IntegerField(source='recipe.cooking_time',
+                                            read_only=True)
+    image = Base64ImageField(required=False,
+                             allow_null=True,
+                             source='recipe.image')
+
+    class Meta:
+        fields = ('user', 'recipe', 'id', 'name', 'image', 'cooking_time')
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')
+        model = Favorite
+
+        extra_kwargs = {
+                'user': {'write_only': True},
+                'recipe': {'write_only': True},
+            }

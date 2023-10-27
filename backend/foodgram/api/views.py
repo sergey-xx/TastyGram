@@ -10,9 +10,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 
 
-from recipes.models import Tag, Recipe, RecipeIngredient
+from recipes.models import Tag, Recipe, RecipeIngredient, Favorite
 from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
-                          RecipeIngredientSerializer, RecipeCreateSerializer)
+                          RecipeIngredientSerializer, RecipeCreateSerializer,
+                          FavoriteSerializer)
 
 User = get_user_model()
 
@@ -62,6 +63,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action == 'create' or self.action == 'partial_update':
             return RecipeCreateSerializer
         return super().get_serializer_class()
-    
+
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+
+class FavoriteViewSet(viewsets.ModelViewSet):
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteSerializer
+
+    def _get_title(self):
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(Recipe, id=title_id)
+
+    def perform_create(self, serializer):
+        recipe = Recipe.objects.get(id=1)
+        print(f'>>>>>>>>>>>>>> {recipe}')
+        # recipe = self._get_title()
+        # favorite = Favorite.objects.create(user=self.request.user,
+        #                                    recipe=recipe)
+        return serializer.save(user=self.request.user,
+                               recipe=recipe)
+
+    # def get_queryset(self):
+    #     return Favorite.objects.filter(user=self.request.user)

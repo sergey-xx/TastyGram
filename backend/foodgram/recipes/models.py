@@ -55,6 +55,10 @@ class Recipe(models.Model):
     is_favorited = models.ManyToManyField(User,
                                           through='Favorite',
                                           related_name='recipes')
+    is_in_shopping_cart = models.ManyToManyField(User,
+                                          through='ShoppingCart',
+                                          related_name='products'
+                                          )
 
     def __str__(self) -> str:
         return str(self.name)
@@ -108,5 +112,30 @@ class Favorite(models.Model):
         return str(self.user) + '/' + str(self.recipe)
     
     class Meta:
-        verbose_name = 'Пользователь/рецепт'
-        verbose_name_plural = 'Пользователи/рецепты'
+        verbose_name = 'Любимый рецепт'
+        verbose_name_plural = 'Любимые'
+
+
+class ShoppingCart(models.Model):
+    """Добавление рецепта в корзину"""
+    user = models.ForeignKey(User,
+                             on_delete=models.CASCADE,
+                             blank=True,
+                             related_name='shoppingcart')
+    recipe = models.ForeignKey(Recipe,
+                               on_delete=models.CASCADE,
+                               blank=True,
+                               related_name='shoppingcart')
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=['user', 'recipe'],
+            name='unique_pair'
+        )]
+
+    def __str__(self) -> str:
+        return str(self.user) + '/' + str(self.recipe)
+
+    class Meta:
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзины'

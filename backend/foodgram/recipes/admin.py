@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Tag, Ingredient, Recipe, RecipeIngredient, Favorite
+from .models import (Tag, Ingredient, Recipe, RecipeIngredient, Favorite,
+                     ShoppingCart)
 
 class TagAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'color', 'slug')
@@ -23,7 +24,19 @@ class RecipeAdmin(admin.ModelAdmin):
         'author',
         'name',
         'text',
-        'cooking_time',)
+        'cooking_time',
+        'get_tag',
+        'get_in_shopping_card',
+        'get_is_favorited',)
+
+    def get_tag(self, obj):
+        return ", ".join([p.name for p in obj.tags.all()])
+
+    def get_in_shopping_card(self, obj):
+        return ", ".join([p.username for p in obj.is_in_shopping_cart.all()])
+
+    def get_is_favorited(self, obj):
+        return ", ".join([p.username for p in obj.is_favorited.all()])
 
 
 class FavoriteAdmin(admin.ModelAdmin):
@@ -32,8 +45,14 @@ class FavoriteAdmin(admin.ModelAdmin):
         'recipe',)
 
 
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'recipe',)
+
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(RecipeIngredient, RecipeIngredientAdmin)
 admin.site.register(Favorite, FavoriteAdmin)
+admin.site.register(ShoppingCart)
