@@ -1,9 +1,13 @@
-from rest_framework import serializers
-from django.utils import timezone
 import re
+import base64
+from rest_framework import serializers
+from rest_framework.serializers import raise_errors_on_nested_writes, traceback
+from rest_framework.utils import model_meta
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
+from django.core.files.base import ContentFile
 
-from recipes.models import Tag, Recipe, RecipeIngredient, Ingredient
+from recipes.models import Tag, Recipe, RecipeIngredient, Ingredient, Favorite
 
 User = get_user_model()
 
@@ -84,11 +88,35 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
                   'name',
                   'measurement_unit',
                   'amount')
+        
+
+class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id',
+                  'amount')
+
+
+class Base64ImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+
+        return super().to_internal_value(data)
+
 
 class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(source='recipeingredient',
                                               many=True)
     tags = TagSerializer(many=True)
+    image = Base64ImageField(required=False, allow_null=True)
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         fields = ('id',
@@ -98,13 +126,66 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'image',
                   'name',
                   'text',
-                  'cooking_time')
+                  'is_favorited',
+                  )
         model = Recipe
+
+    def get_is_favorited(self, obj):
+        user = self.context.get('request').user
+        favorite = Favorite.objects.filter(user=user, recipe=obj)
+        return favorite.exists()
+
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
-    ingredients = RecipeIngredientSerializer(source='recipeingredient',
-                                              many=True) 
+    ingredients = RecipeIngredientCreateSerializer(source='recipeingredient',
+                                                  many=True, )
+    image = Base64ImageField(required=False, allow_null=True)
+    
+    def create(self, validated_data):
+        items = validated_data.pop('recipeingredient')
+        raise_errors_on_nested_writes('create', self, validated_data)
+        ModelClass = self.Meta.model
+        info = model_meta.get_field_info(ModelClass)
+        many_to_many = {}
+        for field_name, relation_info in info.relations.items():
+            if relation_info.to_many and (field_name in validated_data):
+                many_to_many[field_name] = validated_data.pop(field_name)
+
+        try:
+            instance = ModelClass._default_manager.create(**validated_data)
+        except TypeError:
+            tb = traceback.format_exc()
+            msg = (
+                'Got a `TypeError` when calling `%s.%s.create()`. '
+                'This may be because you have a writable field on the '
+                'serializer class that is not a valid argument to '
+                '`%s.%s.create()`. You may need to make the field '
+                'read-only, or override the %s.create() method to handle '
+                'this correctly.\nOriginal exception was:\n %s' %
+                (
+                    ModelClass.__name__,
+                    ModelClass._default_manager.name,
+                    ModelClass.__name__,
+                    ModelClass._default_manager.name,
+                    self.__class__.__name__,
+                    tb
+                )
+            )
+            raise TypeError(msg)
+
+        if many_to_many:
+            for field_name, value in many_to_many.items():
+                field = getattr(instance, field_name)
+                field.set(value)
+
+        for item in items:
+            ingredient = get_object_or_404(Ingredient, id=item['id'])
+            RecipeIngredient.objects.create(recipe=instance,
+                                            ingredient=ingredient,
+                                            amount=item['amount'])
+        return instance
+
     class Meta:
         fields = ('tags',
                   'ingredients',
@@ -113,3 +194,4 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                   'text',
                   'cooking_time')
         model = Recipe
+

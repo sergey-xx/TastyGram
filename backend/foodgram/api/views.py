@@ -53,11 +53,15 @@ class TagsViewSet(viewsets.ModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-
-    queryset = Recipe.objects.all()
+    """Вьюсет для рецептов"""
+    queryset = Recipe.objects.all().order_by('id')
     serializer_class = RecipeSerializer
+    permission_classes = (AllowAny,)
 
     def get_serializer_class(self):
         if self.action == 'create' or self.action == 'partial_update':
             return RecipeCreateSerializer
         return super().get_serializer_class()
+    
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
