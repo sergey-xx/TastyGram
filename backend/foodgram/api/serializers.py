@@ -24,8 +24,8 @@ class UserSerializer(serializers.ModelSerializer):
                   'first_name',
                   'last_name',
                   )
-        
         model = User
+
 
 class UserCreateSerializer(UserSerializer):
     email = serializers.EmailField(required=True)
@@ -69,7 +69,7 @@ class TagSerializer(serializers.ModelSerializer):
             pattern = r'^[-a-zA-Z0-9_]'
             if re.search(pattern, slug):
                 return slug
-            
+
 
 class TagRecipeCrateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -78,7 +78,7 @@ class TagRecipeCrateSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    
+
     name = serializers.StringRelatedField(source='ingredient', read_only=True)
     measurement_unit = serializers.StringRelatedField(source='ingredient.measurement_unit',
                                                       read_only=True)
@@ -90,7 +90,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
                   'name',
                   'measurement_unit',
                   'amount')
-        
+
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
@@ -111,6 +111,24 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
+
+
+class RecipeAnonymSerializer(serializers.ModelSerializer):
+    ingredients = RecipeIngredientSerializer(source='recipeingredient',
+                                              many=True)
+    tags = TagSerializer(many=True)
+    image = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        fields = ('id',
+                  'tags',
+                  'author',
+                  'ingredients',
+                  'image',
+                  'name',
+                  'text',
+                  )
+        model = Recipe
 
 
 class RecipeSerializer(serializers.ModelSerializer):

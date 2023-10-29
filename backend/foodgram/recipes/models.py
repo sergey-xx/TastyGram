@@ -105,37 +105,49 @@ class Favorite(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(
             fields=['user', 'recipe'],
-            name='unique_pair'
+            name='unique_favorite'
         )]
+        verbose_name = 'Любимый рецепт'
+        verbose_name_plural = 'Любимые'
 
     def __str__(self) -> str:
         return str(self.user) + '/' + str(self.recipe)
     
-    class Meta:
-        verbose_name = 'Любимый рецепт'
-        verbose_name_plural = 'Любимые'
 
 
 class ShoppingCart(models.Model):
     """Добавление рецепта в корзину"""
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,
-                             blank=True,
                              related_name='shoppingcart')
     recipe = models.ForeignKey(Recipe,
                                on_delete=models.CASCADE,
-                               blank=True,
                                related_name='shoppingcart')
 
     class Meta:
         constraints = [models.UniqueConstraint(
             fields=['user', 'recipe'],
-            name='unique_pair'
+            name='unique_shopping_card'
         )]
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзины'
 
     def __str__(self) -> str:
         return str(self.user) + '/' + str(self.recipe)
 
+
+class Follow(models.Model):
+    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='follower')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='author')
+
+
     class Meta:
-        verbose_name = 'Корзина'
-        verbose_name_plural = 'Корзины'
+        constraints = [models.UniqueConstraint(
+            fields=['follower', 'author'],
+            name='unique_following'
+        )]
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+
+    def __str__(self) -> str:
+        return str(self.follower) + '/' + str(self.author)
