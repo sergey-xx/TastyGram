@@ -12,10 +12,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 
 
-from recipes.models import Tag, Recipe, RecipeIngredient, Favorite
+from recipes.models import Tag, Recipe, RecipeIngredient, Favorite, Follow
 from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
                           RecipeIngredientSerializer, RecipeCreateSerializer,
-                          FavoriteSerializer, RecipeAnonymSerializer)
+                          FavoriteSerializer, RecipeAnonymSerializer,
+                          FollowSerializer, FollowListSerializer)
 
 User = get_user_model()
 
@@ -100,7 +101,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user,
                                recipe=recipe,)
 
-    
+
     @action(methods=['delete'], detail=True, permission_classes=[IsAuthenticated])
     # def set_password(self, request, pk=None):
     def delete(self, request, *args, **kwargs):
@@ -112,4 +113,50 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             favorite[0].delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class FollowViewSet(viewsets.ModelViewSet):
+    queryset = Follow.objects.all()
+    serializer_class = FollowSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['post','delete']
+
+    def _get_title(self):
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(User, id=title_id)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        author = self._get_title()
+        if Follow.objects.filter(follower=self.request.user, author=author).exists():
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        author = self._get_title()
+        serializer.save(follower=self.request.user,
+                                   author=author,)
         
+    @action(methods=['delete'], detail=True, permission_classes=[IsAuthenticated])
+    # def set_password(self, request, pk=None):
+    def delete(self, request, *args, **kwargs):
+        title_id = kwargs.get('title_id')
+        print(title_id)
+        follow = Follow.objects.filter(author=title_id, follower=self.request.user)
+        if follow.exists():
+            follow[0].delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class FollowListViewSet(mixins.ListModelMixin,
+                    viewsets.GenericViewSet):
+    queryset = Follow.objects.all()
+    serializer_class = FollowSerializer
+    permission_classes = (AllowAny,)
+    def get_queryset(self):
+        return Follow.objects.filter(follower=self.request.user)
+

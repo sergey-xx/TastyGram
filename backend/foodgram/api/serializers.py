@@ -9,13 +9,12 @@ from django.core.files.base import ContentFile
 from collections import OrderedDict
 
 from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient, Favorite,
-                            ShoppingCart)
+                            ShoppingCart, Follow)
 
 User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-
 
     class Meta:
         fields = ('email',
@@ -72,6 +71,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class TagRecipeCrateSerializer(serializers.ModelSerializer):
+
     class Meta:
         fields = ('id',)
         model = Tag
@@ -164,7 +164,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
+                                              many=True)
     ingredients = RecipeIngredientCreateSerializer(source='recipeingredient',
                                                   many=True, )
     image = Base64ImageField(required=False, allow_null=True)
@@ -223,6 +224,19 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         model = Recipe
 
 
+class RecipeFollowSerializer(serializers.ModelSerializer):
+
+    image = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        fields = ('id',
+                  'name',
+                  'image',
+                  'cooking_time'
+                  )
+        model = Recipe
+
+
 class FavoriteSerializer(serializers.ModelSerializer):
     name = serializers.StringRelatedField(source='recipe.name')
     cooking_time = serializers.IntegerField(source='recipe.cooking_time',
@@ -238,5 +252,75 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
         extra_kwargs = {
                 'user': {'write_only': True},
-                'recipe': {'write_only': True},
-            }
+                'recipe': {'write_only': True},}
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    username = serializers.StringRelatedField(source='author.username')
+    first_name = serializers.StringRelatedField(source='author.first_name')
+    last_name = serializers.StringRelatedField(source='author.last_name')
+    recipes = RecipeFollowSerializer(read_only=True, many=True, source='author.recipe')
+    is_subscribed = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+    email = serializers.StringRelatedField(source='author.email')
+
+    class Meta:
+        fields = ('email',
+                  'id',
+                  'username',
+                  'first_name',
+                  'last_name',
+                  'is_subscribed',
+                  'recipes',
+                  'recipes_count')
+
+        read_only_fields = ('email',
+                            'id',
+                            'username',
+                            'first_name',
+                            'last_name',
+                            'is_subscribed',
+                            'recipes',
+                            'recipes_count',)
+
+        model = Follow
+
+    def get_is_subscribed(self, obj):
+        if obj:
+            return True
+
+    def get_recipes_count(self, obj):
+        recipes_count = Recipe.objects.filter(author=obj.author).count()
+        return recipes_count
+
+class FollowListSerializer(serializers.ModelSerializer):
+    username = serializers.StringRelatedField(source='author.username')
+    first_name = serializers.StringRelatedField(source='author.first_name')
+    last_name = serializers.StringRelatedField(source='author.last_name')
+    recipes = RecipeFollowSerializer(read_only=True, many=True, source='author.recipe')
+    # is_subscribed = serializers.SerializerMethodField()
+    # recipes_count = serializers.SerializerMethodField()
+    email = serializers.StringRelatedField(source='author.email')
+
+    class Meta:
+        fields = ('email',
+                  'id',
+                  'username',
+                  'first_name',
+                  'last_name',
+                #   'is_subscribed',
+                  'recipes',
+                #   'recipes_count'
+                  )
+
+        read_only_fields = ('email',
+                            'id',
+                            'username',
+                            'first_name',
+                            'last_name',
+                            # 'is_subscribed',
+                            'recipes',
+                            # 'recipes_count',
+                            )
+
+        model = Follow
