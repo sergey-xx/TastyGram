@@ -3,18 +3,23 @@ import base64
 from rest_framework import serializers
 from rest_framework.serializers import raise_errors_on_nested_writes, traceback
 from rest_framework.utils import model_meta
+from rest_framework.validators import UniqueValidator
+from rest_framework.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.core.files.base import ContentFile
 from collections import OrderedDict
 
+
+
 from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient, Favorite,
-                            ShoppingCart, Follow)
+                            ShoppingCart, Follow, Ingredient)
 
 User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         fields = ('email',
@@ -22,13 +27,23 @@ class UserSerializer(serializers.ModelSerializer):
                   'username',
                   'first_name',
                   'last_name',
+                  'is_subscribed'
                   )
         model = User
 
+    def get_is_subscribed(self, obj):
+        user = self.context.get('request').user
+
+        if Follow.objects.filter(follower=user,
+                                 author = obj):
+            return True
+        return False
 
 class UserCreateSerializer(UserSerializer):
     email = serializers.EmailField(required=True)
-    username = serializers.CharField(required=True)
+    username = serializers.CharField(required=True,
+                                     max_length=100,
+                                     validators=[UniqueValidator(queryset=User.objects.all())])
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
@@ -79,10 +94,13 @@ class TagRecipeCrateSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
 
-    name = serializers.StringRelatedField(source='ingredient', read_only=True)
+    name = serializers.StringRelatedField(source='ingredient',
+                                          read_only=True)
     measurement_unit = serializers.StringRelatedField(source='ingredient.measurement_unit',
-                                                      read_only=True)
+                                                      read_only=True,)
     amount = serializers.IntegerField()
+
+    
 
     class Meta:
         model = RecipeIngredient
@@ -93,13 +111,20 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField()
+    id = serializers.PrimaryKeyRelatedField(source='ingredient.id',
+                                            queryset=Ingredient.objects.all(),
+                                            required=True)
+    amount = serializers.IntegerField(required=True)
 
     class Meta:
         model = RecipeIngredient
         fields = ('id',
                   'amount')
+
+    def validate_amount(self, amount):
+        if amount < 1:
+            raise serializers.ValidationError('Количество не может быть менее 1')
+        return amount
 
 
 class Base64ImageField(serializers.ImageField):
@@ -138,6 +163,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
+    author = UserSerializer()
 
     class Meta:
         fields = ('id',
@@ -150,6 +176,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'is_favorited',
                   'is_in_shopping_cart',
                   )
+        read_only_fields = ('author',)
         model = Recipe
 
     def get_is_favorited(self, obj):
@@ -167,8 +194,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
                                               many=True)
     ingredients = RecipeIngredientCreateSerializer(source='recipeingredient',
-                                                  many=True, )
-    image = Base64ImageField(required=False, allow_null=True)
+                                                  many=True,
+                                                  required=True,
+                                                  allow_null=False,)
+    image = Base64ImageField(required=True, allow_null=False)
     
     def create(self, validated_data):
         items = validated_data.pop('recipeingredient')
@@ -208,10 +237,33 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 field.set(value)
 
         for item in items:
-            ingredient = get_object_or_404(Ingredient, id=item['id'])
             RecipeIngredient.objects.create(recipe=instance,
-                                            ingredient=ingredient,
+                                            ingredient=item.get('ingredient').get('id'),
                                             amount=item['amount'])
+        return instance
+
+    def update(self, instance, validated_data):
+        items = validated_data.pop('recipeingredient')
+        raise_errors_on_nested_writes('update', self, validated_data)
+        info = model_meta.get_field_info(instance)
+        m2m_fields = []
+        for attr, value in validated_data.items():
+            if attr in info.relations and info.relations[attr].to_many:
+                m2m_fields.append((attr, value))
+            else:
+                setattr(instance, attr, value)
+        instance.save()
+        for attr, value in m2m_fields:
+            field = getattr(instance, attr)
+            field.set(value)
+
+        for item in items:
+            RecipeIngredient.objects.filter(recipe=instance).delete()
+            for item in items:
+                RecipeIngredient.objects.create(recipe=instance,
+                                            ingredient=item.get('ingredient').get('id'),
+                                            amount=item['amount'])
+
         return instance
 
     class Meta:
@@ -324,3 +376,12 @@ class FollowListSerializer(serializers.ModelSerializer):
                             )
 
         model = Follow
+
+
+class IngredientSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('id',
+                  'name',
+                  'measurement_unit')
+        model = Ingredient

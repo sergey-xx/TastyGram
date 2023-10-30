@@ -83,7 +83,7 @@ class RecipeIngredient(models.Model):
                                related_name='recipeingredient')
 
     def __str__(self) -> str:
-        return str(self.ingredient) + str(self.recipe) + str(self.amount)
+        return str(self.ingredient) + '/' + str(self.recipe)+ '/' + str(self.amount)
 
     class Meta:
         verbose_name = 'Ингредиент/рецепт'

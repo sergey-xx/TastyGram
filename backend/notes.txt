@@ -1,1 +1,4 @@
  py manage.py createsuperuser --username admin --email admin@admin.ru
+
+yandex
+    "auth_token": "91b3d124715b5c7c71ae1cb708f2ed59c6443cc2"
