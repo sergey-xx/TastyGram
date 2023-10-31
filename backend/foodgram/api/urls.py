@@ -1,6 +1,5 @@
-from django.contrib import admin
 from django.urls import path, include
-from rest_framework.routers import SimpleRouter, DefaultRouter
+from rest_framework.routers import DefaultRouter
 
 from .views import (UserMe, TagsViewSet, RecipeViewSet, FavoriteViewSet,
                     FollowViewSet, FollowListViewSet, IngredientViewSet,
@@ -16,12 +15,14 @@ router.register(r'users/(?P<title_id>\d+)/subscribe', FollowViewSet,
 router.register('users/subscriptions', FollowListViewSet, basename='Follow')
 router.register('ingredients', IngredientViewSet, basename='Ingredient')
 
-
-
 urlpatterns = [
     path('users/me/', UserMe.as_view()),
     path('auth/', include('djoser.urls.authtoken')),
-    path('recipes/download_shopping_cart/', DownloadViewSet.as_view(), name='shopping_card'),
+
+    path('recipes/download_shopping_cart/',
+         DownloadViewSet.as_view(),
+         name='shopping_card'),
+
     path('', include(router.urls),),
     path('', include('djoser.urls')),
 ]

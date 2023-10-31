@@ -50,7 +50,7 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     list_display = (
         'user',
         'recipe',)
-    
+
 
 class FollowAdmin(admin.ModelAdmin):
     list_display = (

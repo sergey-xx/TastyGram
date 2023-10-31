@@ -1,12 +1,7 @@
 import os
-from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.http import FileResponse
-from django.utils.encoding import smart_text
-from django.http import FileResponse
 from rest_framework import viewsets, mixins, status, renderers
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
@@ -14,22 +9,15 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.decorators import api_view, permission_classes
-
-
-
-# views.py
-from django.views.generic import DetailView
+from rest_framework import serializers
 
 
 from recipes.models import (Tag, Recipe, RecipeIngredient, Favorite, Follow,
                             Ingredient, ShoppingCart)
 from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
-                          RecipeIngredientSerializer, RecipeCreateSerializer,
+                          RecipeCreateSerializer,
                           FavoriteSerializer, RecipeAnonymSerializer,
-                          FollowSerializer, FollowListSerializer,
-                          IngredientSerializer)
+                          FollowSerializer, IngredientSerializer)
 from .permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
@@ -88,7 +76,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
     def perform_update(self, serializer):
-        # print(serializer)
         serializer.save(author=self.request.user)
 
 
@@ -125,7 +112,6 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     def delete(self, request, *args, **kwargs):
         title_id = kwargs.get('title_id')
         recipe = get_object_or_404(Recipe, id=title_id)
-        print(title_id)
         favorite = Favorite.objects.filter(recipe=title_id, user=self.request.user)
         if favorite.exists():
             favorite[0].delete()
@@ -147,22 +133,29 @@ class FollowViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         author = self._get_title()
-        if Follow.objects.filter(follower=self.request.user, author=author).exists():
+        print(self.request.user)
+        print(author)
+        if author == self.request.user:
+            raise serializers.ValidationError('Нельзя подписаться на самого сетя!')
+        if Follow.objects.filter(follower=self.request.user,
+                                 author=author).exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data, status=status.HTTP_201_CREATED,
+                        headers=headers)
 
     def perform_create(self, serializer):
         author = self._get_title()
         serializer.save(follower=self.request.user,
                                    author=author,)
 
-    @action(methods=['delete'], detail=True, permission_classes=[IsAuthenticated])
+    @action(methods=['delete'], detail=True,
+            permission_classes=[IsAuthenticated])
     def delete(self, request, *args, **kwargs):
         title_id = kwargs.get('title_id')
-        print(title_id)
-        follow = Follow.objects.filter(author=title_id, follower=self.request.user)
+        follow = Follow.objects.filter(author=title_id,
+                                       follower=self.request.user)
         if follow.exists():
             follow[0].delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -187,15 +180,14 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
 class DownloadViewSet(APIView):
     permission_classes = (AllowAny,)
-    # renderer_classes = [PlainTextRenderer]
 
-    def get(self, request):
-        # shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
-        
+    def merge_shopping_cart(self, request):
+    # shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
         shopping_cart = ShoppingCart.objects.filter(user=1)
         recipes = []
         for item in shopping_cart:
             recipes.append(item.recipe)
+
         items = dict()
         for recipe in recipes:
             recipeingredients = RecipeIngredient.objects.filter(recipe=recipe)
@@ -206,17 +198,24 @@ class DownloadViewSet(APIView):
                     items[name] += amount
                 else:
                      items[name] = amount
-        for key, item in items.items():
-            print(key + ' ' + str(item))
+        return items
+
+    def get(self, request):
+        items = self.merge_shopping_cart(request)
+
         if os.path.exists('shopping_cart.txt'):
             os.remove('shopping_cart.txt')
+            
         with open('shopping_cart.txt', 'x') as file:
             for key, item in items.items():
                 file.write(key + '\t' + str(item) + '\n')
+
         with open('shopping_cart.txt', 'r') as file:
-            response = HttpResponse(file, content_type='text/csv', status=status.HTTP_200_OK)
-            response['Content-Disposition'] = 'attachment; filename=shopping_cart.txt'
+            response = HttpResponse(file, content_type='text/csv',
+                                    status=status.HTTP_200_OK)
+            response['Content-Disposition'] = ('attachment; '
+                                               'filename=shopping_cart.txt')
+
         if os.path.exists('shopping_cart.txt'):
             os.remove('shopping_cart.txt')
         return response
-

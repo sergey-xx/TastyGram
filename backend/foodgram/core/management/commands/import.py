@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from io import open
-import csv, json, os
+import json, os
 
 from recipes.models import Ingredient
 

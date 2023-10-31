@@ -1,19 +1,15 @@
 import re
 import base64
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
+from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.serializers import raise_errors_on_nested_writes, traceback
 from rest_framework.utils import model_meta
 from rest_framework.validators import UniqueValidator
-from rest_framework.exceptions import ValidationError
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
-from django.core.files.base import ContentFile
-from collections import OrderedDict
 
-
-
-from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient, Favorite,
-                            ShoppingCart, Follow, Ingredient)
+from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient,
+                            Favorite, ShoppingCart, Follow, Ingredient)
 
 User = get_user_model()
 
@@ -43,14 +39,16 @@ class UserCreateSerializer(UserSerializer):
     email = serializers.EmailField(required=True)
     username = serializers.CharField(required=True,
                                      max_length=100,
-                                     validators=[UniqueValidator(queryset=User.objects.all())])
+                                     validators=[UniqueValidator(
+                                         queryset=User.objects.all())])
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
 
     def validate_email(self, email):
         if User.objects.filter(email=email):
-            raise serializers.ValidationError('Пользователь с таким email уже существует')
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует')
         return email
 
     def validate_username(self, username):
@@ -71,7 +69,9 @@ class UserCreateSerializer(UserSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    slug = serializers.SlugField(max_length=200, min_length=1, allow_blank=False)
+    slug = serializers.SlugField(max_length=200,
+                                 min_length=1,
+                                 allow_blank=False)
     class Meta:
         fields = ('id',
                   'name',
@@ -96,11 +96,11 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
     name = serializers.StringRelatedField(source='ingredient',
                                           read_only=True)
-    measurement_unit = serializers.StringRelatedField(source='ingredient.measurement_unit',
-                                                      read_only=True,)
+    measurement_unit = serializers.StringRelatedField(
+        source='ingredient.measurement_unit',
+        read_only=True,)
     amount = serializers.IntegerField()
 
-    
 
     class Meta:
         model = RecipeIngredient
@@ -123,7 +123,8 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
 
     def validate_amount(self, amount):
         if amount < 1:
-            raise serializers.ValidationError('Количество не может быть менее 1')
+            raise serializers.ValidationError(
+                'Количество не может быть менее 1')
         return amount
 
 
@@ -198,7 +199,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                                                   required=True,
                                                   allow_null=False,)
     image = Base64ImageField(required=True, allow_null=False)
-    
+
     def create(self, validated_data):
         items = validated_data.pop('recipeingredient')
         raise_errors_on_nested_writes('create', self, validated_data)
@@ -237,9 +238,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 field.set(value)
 
         for item in items:
-            RecipeIngredient.objects.create(recipe=instance,
-                                            ingredient=item.get('ingredient').get('id'),
-                                            amount=item['amount'])
+            RecipeIngredient.objects.create(
+                recipe=instance,
+                ingredient=item.get('ingredient').get('id'),
+                amount=item['amount'])
         return instance
 
     def update(self, instance, validated_data):
@@ -260,9 +262,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         for item in items:
             RecipeIngredient.objects.filter(recipe=instance).delete()
             for item in items:
-                RecipeIngredient.objects.create(recipe=instance,
-                                            ingredient=item.get('ingredient').get('id'),
-                                            amount=item['amount'])
+                RecipeIngredient.objects.create(
+                    recipe=instance,
+                    ingredient=item.get('ingredient').get('id'),
+                    amount=item['amount'])
 
         return instance
 
@@ -311,7 +314,8 @@ class FollowSerializer(serializers.ModelSerializer):
     username = serializers.StringRelatedField(source='author.username')
     first_name = serializers.StringRelatedField(source='author.first_name')
     last_name = serializers.StringRelatedField(source='author.last_name')
-    recipes = RecipeFollowSerializer(read_only=True, many=True, source='author.recipe')
+    recipes = RecipeFollowSerializer(read_only=True,
+                                     many=True, source='author.recipe')
     is_subscribed = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
     email = serializers.StringRelatedField(source='author.email')
@@ -345,37 +349,37 @@ class FollowSerializer(serializers.ModelSerializer):
         recipes_count = Recipe.objects.filter(author=obj.author).count()
         return recipes_count
 
-class FollowListSerializer(serializers.ModelSerializer):
-    username = serializers.StringRelatedField(source='author.username')
-    first_name = serializers.StringRelatedField(source='author.first_name')
-    last_name = serializers.StringRelatedField(source='author.last_name')
-    recipes = RecipeFollowSerializer(read_only=True, many=True, source='author.recipe')
-    # is_subscribed = serializers.SerializerMethodField()
-    # recipes_count = serializers.SerializerMethodField()
-    email = serializers.StringRelatedField(source='author.email')
+# class FollowListSerializer(serializers.ModelSerializer):
+#     username = serializers.StringRelatedField(source='author.username')
+#     first_name = serializers.StringRelatedField(source='author.first_name')
+#     last_name = serializers.StringRelatedField(source='author.last_name')
+#     recipes = RecipeFollowSerializer(read_only=True, many=True, source='author.recipe')
+#     # is_subscribed = serializers.SerializerMethodField()
+#     # recipes_count = serializers.SerializerMethodField()
+#     email = serializers.StringRelatedField(source='author.email')
 
-    class Meta:
-        fields = ('email',
-                  'id',
-                  'username',
-                  'first_name',
-                  'last_name',
-                #   'is_subscribed',
-                  'recipes',
-                #   'recipes_count'
-                  )
+#     class Meta:
+#         fields = ('email',
+#                   'id',
+#                   'username',
+#                   'first_name',
+#                   'last_name',
+#                 #   'is_subscribed',
+#                   'recipes',
+#                 #   'recipes_count'
+#                   )
 
-        read_only_fields = ('email',
-                            'id',
-                            'username',
-                            'first_name',
-                            'last_name',
-                            # 'is_subscribed',
-                            'recipes',
-                            # 'recipes_count',
-                            )
+#         read_only_fields = ('email',
+#                             'id',
+#                             'username',
+#                             'first_name',
+#                             'last_name',
+#                             # 'is_subscribed',
+#                             'recipes',
+#                             # 'recipes_count',
+#                             )
 
-        model = Follow
+#         model = Follow
 
 
 class IngredientSerializer(serializers.ModelSerializer):
