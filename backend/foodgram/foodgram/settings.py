@@ -38,11 +38,13 @@ INSTALLED_APPS = [
     'djoser',
     'rest_framework_simplejwt',
     'rest_framework.authtoken',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -151,7 +153,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
 }
 
-
 DJOSER = {
     'SERIALIZERS': {
         'user': 'api.serializers.UserSerializer',
@@ -159,3 +160,9 @@ DJOSER = {
         },
     'LOGIN_FIELD': 'email'
 }
+
+CORS_URLS_REGEX = r'^/api/.*$'
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+]
