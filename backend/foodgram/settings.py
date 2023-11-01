@@ -19,8 +19,7 @@ DEBUG = os.getenv('DEBUG') in ['TRUE', 'true', '1', 'yes']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0', 'localhost']
 
 # Application definition
 
@@ -83,14 +82,25 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',
+#         'USER': 'django_user',
+#         'PASSWORD': 'mysecretpassword',
+#         'HOST': '127.0.0.1',
+#         'PORT': 5432
+#     }
+# }
+
 DATABASES = {
-    'default': {
+        'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'django_user',
-        'PASSWORD': 'mysecretpassword',
-        'HOST': '127.0.0.1',
-        'PORT': 5432
+        'NAME': os.getenv('POSTGRES_DB', 'django'),
+        'USER': os.getenv('POSTGRES_USER', 'django'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', ''),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
