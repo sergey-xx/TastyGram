@@ -15,7 +15,7 @@ from rest_framework import serializers
 from recipes.models import (Tag, Recipe, RecipeIngredient, Favorite, Follow,
                             Ingredient, ShoppingCart)
 from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
-                          RecipeCreateSerializer,
+                          RecipeCreateSerializer, UserMeSerializer,
                           FavoriteSerializer, RecipeAnonymSerializer,
                           FollowSerializer, IngredientSerializer)
 from .permissions import IsOwnerOrReadOnly
@@ -34,6 +34,7 @@ class UsersViewSet(mixins.UpdateModelMixin,
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (AllowAny, )
+    http_method_names = ['get', 'post']
 
 
 class UserMe(APIView):
@@ -41,12 +42,12 @@ class UserMe(APIView):
 
     def get(self, request):
         user = request.user
-        serializer = UserSerializer(user)
+        serializer = UserMeSerializer(user)
         return Response(serializer.data)
 
     def patch(self, request):
         user = request.user
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = UserMeSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return self.get(request)
@@ -56,6 +57,10 @@ class TagsViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     lookup_field = 'id'
+    permission_classes = (IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly)
+    http_method_names = ['get']
+
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -67,7 +72,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.user.is_anonymous:
-            return RecipeAnonymSerializer
+            # return RecipeAnonymSerializer
+            return RecipeSerializer
         if self.action == 'create' or self.action == 'update':
             return RecipeCreateSerializer
         return super().get_serializer_class()
@@ -176,6 +182,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientSerializer
     permission_classes = (AllowAny,)
     pagination_class = None
+    http_method_names = ['get']
 
 
 class DownloadViewSet(APIView):

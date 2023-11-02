@@ -1,14 +1,9 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-import _locale
+
 
 load_dotenv()
-
-import locale
-# def getpreferredencoding(do_setlocale = True):
-#     return "utf-8"
-# locale.getpreferredencoding = getpreferredencoding
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,6 +38,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework.authtoken',
     'corsheaders',
+    'users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
@@ -112,6 +108,11 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
+# from users.models import CustomUser
+
+AUTH_USER_MODEL = 'users.CustomUser'
+
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -171,9 +172,16 @@ REST_FRAMEWORK = {
 DJOSER = {
     'SERIALIZERS': {
         'user': 'api.serializers.UserSerializer',
+        'user_list': 'api.serializers.UserSerializer',
         'user_create': 'api.serializers.UserCreateSerializer',
         },
-    'LOGIN_FIELD': 'email'
+    'LOGIN_FIELD': 'email',
+    'PERMISSIONS': {
+    'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+    # 'user': ['rest_framework.permissions.AllowAny'],
+    'user_list': ['rest_framework.permissions.AllowAny'],
+},
+    'HIDE_USERS': False,
 }
 
 CORS_URLS_REGEX = r'^/api/.*$'

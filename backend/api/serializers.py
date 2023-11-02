@@ -2,6 +2,7 @@ import re
 import base64
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.hashers import make_password
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.serializers import raise_errors_on_nested_writes, traceback
@@ -11,7 +12,8 @@ from rest_framework.validators import UniqueValidator
 from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient,
                             Favorite, ShoppingCart, Follow, Ingredient)
 
-User = get_user_model()
+# User = get_user_model()
+from users.models import CustomUser as User
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,12 +30,21 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
 
     def get_is_subscribed(self, obj):
+        print(self)
+        print(obj)
         user = self.context.get('request').user
-
+        # user = obj.user
+        if user.is_anonymous:
+            return False
         if Follow.objects.filter(follower=user,
-                                 author = obj):
+                                 author=obj):
             return True
         return False
+
+class UserMeSerializer(UserSerializer):
+    def get_is_subscribed(self, obj):
+        return False
+
 
 class UserCreateSerializer(UserSerializer):
     email = serializers.EmailField(required=True)
@@ -43,8 +54,12 @@ class UserCreateSerializer(UserSerializer):
                                          queryset=User.objects.all())])
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
-    password = serializers.CharField(required=True)
+    # password = serializers.CharField(required=True)
 
+    def create(self, validated_data):
+       validated_data['password'] = make_password(validated_data['password'])
+       return super(UserSerializer, self).create(validated_data)
+    
     def validate_email(self, email):
         if User.objects.filter(email=email):
             raise serializers.ValidationError(
@@ -57,16 +72,37 @@ class UserCreateSerializer(UserSerializer):
             return username
         raise serializers.ValidationError(
             'Имя не может содержать специальные символы')
+    
+    def validate_first_name(self, first_name):
+        if len(first_name) > 150:
+            raise serializers.ValidationError(
+            'Имя не может быть длиннее 150 символов')
+        return first_name
+    
+    def validate_last_name(self, last_name):
+        if len(last_name) > 150:
+            raise serializers.ValidationError(
+            'Имя не может быть длиннее 150 символов')
+        return last_name
 
     class Meta:
+        model = User
         fields = ('email',
+                  'id',
                   'username',
                   'first_name',
                   'last_name',
                   'password'
                   )
-        model = User
-
+        read_only_fields = ('email',
+                            'id',
+                            'username',
+                            'first_name',
+                            'last_name',
+                            )
+        extra_kwargs = {
+                'password': {'write_only': True},
+                }
 
 class TagSerializer(serializers.ModelSerializer):
     slug = serializers.SlugField(max_length=200,
@@ -144,6 +180,8 @@ class RecipeAnonymSerializer(serializers.ModelSerializer):
                                               many=True)
     tags = TagSerializer(many=True)
     image = Base64ImageField(required=False, allow_null=True)
+    author = UserSerializer()
+
 
     class Meta:
         fields = ('id',
@@ -182,11 +220,15 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
         favorite = Favorite.objects.filter(user=user, recipe=obj)
         return favorite.exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
         favorite = ShoppingCart.objects.filter(user=user, recipe=obj)
         return favorite.exists()
 

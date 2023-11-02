@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 from .validators import time_validator
+# from users.models import CustomUser as User
 
 User = get_user_model()
 

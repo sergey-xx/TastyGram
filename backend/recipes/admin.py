@@ -1,7 +1,8 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
 from .models import (Tag, Ingredient, Recipe, RecipeIngredient, Favorite,
-                     ShoppingCart, Follow)
+                     ShoppingCart, Follow, User)
 
 class TagAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'color', 'slug')
@@ -65,3 +66,4 @@ admin.site.register(RecipeIngredient, RecipeIngredientAdmin)
 admin.site.register(Favorite, FavoriteAdmin)
 admin.site.register(ShoppingCart)
 admin.site.register(Follow, FollowAdmin)
+# admin.site.register(User, UserAdmin)

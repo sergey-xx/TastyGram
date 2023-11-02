@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (UserMe, TagsViewSet, RecipeViewSet, FavoriteViewSet,
                     FollowViewSet, FollowListViewSet, IngredientViewSet,
-                    DownloadViewSet)
+                    DownloadViewSet, UsersViewSet)
 
 router = DefaultRouter()
 router.register('tags', TagsViewSet, basename='tags')
@@ -14,6 +14,8 @@ router.register(r'users/(?P<title_id>\d+)/subscribe', FollowViewSet,
                 basename='Follow-detail')
 router.register('users/subscriptions', FollowListViewSet, basename='Follow')
 router.register('ingredients', IngredientViewSet, basename='Ingredient')
+# router.register('users', UsersViewSet, 'user')
+
 
 urlpatterns = [
     path('users/me/', UserMe.as_view()),
@@ -23,6 +25,6 @@ urlpatterns = [
          DownloadViewSet.as_view(),
          name='shopping_card'),
 
-    path('', include(router.urls),),
     path('', include('djoser.urls')),
+    path('', include(router.urls),),
 ]
