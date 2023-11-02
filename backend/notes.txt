@@ -1,1 +1,1 @@
- py manage.py createsuperuser --username admin --email admin@admin.ru
+ python manage.py createsuperuser --username admin --email admin@admin.ru
