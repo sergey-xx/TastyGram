@@ -42,9 +42,7 @@ class Recipe(models.Model):
                                verbose_name='Автор',
                                related_name='recipe',)
     tags = models.ManyToManyField(Tag,
-                                  blank=True,
-                                  related_name='recipe',
-                                  verbose_name='Теги')
+                                  through='RecipeTag',)
     image = models.ImageField('Картинка', )
     name = models.CharField('Название',
                             max_length=200)
@@ -52,7 +50,8 @@ class Recipe(models.Model):
     cooking_time = models.IntegerField('Время приготовления, мин',
                                        validators=[time_validator, ])
     ingredients = models.ManyToManyField(Ingredient,
-                                         through='RecipeIngredient',)
+                                         through='RecipeIngredient',
+                                         blank=False,)
     is_favorited = models.ManyToManyField(User,
                                           through='Favorite',
                                           related_name='recipes')
@@ -67,6 +66,26 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+
+
+class RecipeTag(models.Model):
+    tag = models.ForeignKey(Tag,
+                            on_delete=models.CASCADE,
+                            blank=False,
+                            verbose_name='тэг',
+                            related_name='recipetag')
+    recipe = models.ForeignKey(Recipe,
+                               on_delete=models.CASCADE,
+                               blank=False,
+                               verbose_name='Рецепт',
+                               related_name='recipetag')
+
+    def __str__(self) -> str:
+        return str(self.recipe) + '/' + str(self.tag)
+
+    class Meta:
+        verbose_name = 'Рецепт/тэг'
+        verbose_name_plural = 'Рецепты/тэги'
 
 
 class RecipeIngredient(models.Model):
@@ -89,6 +108,10 @@ class RecipeIngredient(models.Model):
     class Meta:
         verbose_name = 'Ингредиент/рецепт'
         verbose_name_plural = 'Ингредиенты/рецепты'
+        constraints = [models.UniqueConstraint(
+            fields=['ingredient', 'recipe'],
+            name='unique_recipe_ingredient'
+        )]
 
 
 class Favorite(models.Model):

@@ -2,6 +2,7 @@ import os
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, mixins, status, renderers
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
@@ -10,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import serializers
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 
 
 from recipes.models import (Tag, Recipe, RecipeIngredient, Favorite, Follow,
@@ -35,6 +37,7 @@ class UsersViewSet(mixins.UpdateModelMixin,
     serializer_class = UserSerializer
     permission_classes = (AllowAny, )
     http_method_names = ['get', 'post']
+    pagination_class = LimitOffsetPagination
 
 
 class UserMe(APIView):
@@ -60,7 +63,7 @@ class TagsViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsOwnerOrReadOnly)
     http_method_names = ['get']
-
+    pagination_class = None
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -69,12 +72,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsOwnerOrReadOnly)
+    pagination_class = LimitOffsetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('author',) 
 
     def get_serializer_class(self):
         if self.request.user.is_anonymous:
             # return RecipeAnonymSerializer
             return RecipeSerializer
-        if self.action == 'create' or self.action == 'update':
+        if self.action == 'create' or self.action == 'update' or self.action == 'partial_update':
             return RecipeCreateSerializer
         return super().get_serializer_class()
 
@@ -91,6 +97,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post','delete']
     lookup_field = 'id'
+    pagination_class = PageNumberPagination
 
 
     def _get_title(self):
@@ -130,6 +137,23 @@ class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post','delete']
+    pagination_class = LimitOffsetPagination
+
+    def paginate_queryset(self, queryset):
+        """
+        Return a single page of results, or `None` if pagination is disabled.
+        """
+        if self.paginator is None:
+            return None
+        return self.paginator.paginate_queryset(queryset, self.request, view=self)
+    
+    def get_paginated_response(self, data):
+        """
+        Return a paginated style `Response` object for the given output data.
+        """
+        assert self.paginator is not None
+        return self.paginator.get_paginated_response(data)
+
 
     def _get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -173,6 +197,8 @@ class FollowListViewSet(mixins.ListModelMixin,
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
+    pagination_class = LimitOffsetPagination
+    
     def get_queryset(self):
         return Follow.objects.filter(follower=self.request.user)
 
@@ -183,14 +209,18 @@ class IngredientViewSet(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
     pagination_class = None
     http_method_names = ['get']
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ('name',) 
+
+
 
 
 class DownloadViewSet(APIView):
     permission_classes = (AllowAny,)
 
     def merge_shopping_cart(self, request):
-    # shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
-        shopping_cart = ShoppingCart.objects.filter(user=1)
+        shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
+        # shopping_cart = ShoppingCart.objects.filter(user=1)
         recipes = []
         for item in shopping_cart:
             recipes.append(item.recipe)
