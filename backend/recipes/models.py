@@ -2,18 +2,19 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 from .validators import time_validator
-# from users.models import CustomUser as User
 
 User = get_user_model()
 
 
 class Tag(models.Model):
-    """Класс Тегов"""
+    """Класс Тегов."""
+
     name = models.CharField('Имя', max_length=200, unique=True, blank=False)
     color = models.CharField('Цвет', max_length=7, null=True, default=None)
     slug = models.SlugField('Slug', max_length=200, unique=True)
 
     def __str__(self) -> str:
+        """Отобращает название в виде имени."""
         return self.name
 
     class Meta:
@@ -22,12 +23,14 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    """Класс Ингредиентов"""
+    """Класс Ингредиентов."""
+
     name = models.CharField('Название', max_length=200)
     measurement_unit = models.CharField('Единица измерения',
                                         max_length=200)
 
     def __str__(self) -> str:
+        """Отобращает название в виде имени."""
         return self.name
 
     class Meta:
@@ -36,7 +39,8 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-    """Класс Рецептов"""
+    """Класс Рецептов."""
+
     author = models.ForeignKey(User,
                                on_delete=models.CASCADE,
                                verbose_name='Автор',
@@ -56,11 +60,11 @@ class Recipe(models.Model):
                                           through='Favorite',
                                           related_name='recipes')
     is_in_shopping_cart = models.ManyToManyField(User,
-                                          through='ShoppingCart',
-                                          related_name='products'
-                                          )
+                                                 through='ShoppingCart',
+                                                 related_name='products')
 
     def __str__(self) -> str:
+        """Отобращает название в виде поля имя."""
         return str(self.name)
 
     class Meta:
@@ -69,6 +73,8 @@ class Recipe(models.Model):
 
 
 class RecipeTag(models.Model):
+    """Связь Тэгов и Рецептов."""
+
     tag = models.ForeignKey(Tag,
                             on_delete=models.CASCADE,
                             blank=False,
@@ -80,9 +86,6 @@ class RecipeTag(models.Model):
                                verbose_name='Рецепт',
                                related_name='recipetag')
 
-    def __str__(self) -> str:
-        return str(self.recipe) + '/' + str(self.tag)
-
     class Meta:
         verbose_name = 'Рецепт/тэг'
         verbose_name_plural = 'Рецепты/тэги'
@@ -91,9 +94,14 @@ class RecipeTag(models.Model):
             name='unique_recipe_tag'
         )]
 
+    def __str__(self) -> str:
+        """Отобращает название в виде Рецепт/Тэг."""
+        return str(self.recipe) + '/' + str(self.tag)
+
 
 class RecipeIngredient(models.Model):
-    """Класс связи рецептов с ингредиентами"""
+    """Класс связи рецептов с ингредиентами."""
+
     amount = models.IntegerField()
     ingredient = models.ForeignKey(Ingredient,
                                    on_delete=models.CASCADE,
@@ -106,9 +114,6 @@ class RecipeIngredient(models.Model):
                                verbose_name='Рецепт',
                                related_name='recipeingredient')
 
-    def __str__(self) -> str:
-        return str(self.ingredient) + '/' + str(self.recipe)+ '/' + str(self.amount)
-
     class Meta:
         verbose_name = 'Ингредиент/рецепт'
         verbose_name_plural = 'Ингредиенты/рецепты'
@@ -117,8 +122,15 @@ class RecipeIngredient(models.Model):
             name='unique_recipe_ingredient'
         )]
 
+    def __str__(self) -> str:
+        """Отобращает название в виде Ингредиент/Рецепт/Количество."""
+        return (str(self.ingredient) + '/' +
+                str(self.recipe) + '/' + str(self.amount))
+
 
 class Favorite(models.Model):
+    """Добавление рецептов в Любимые."""
+
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,
                              blank=True,
@@ -139,11 +151,13 @@ class Favorite(models.Model):
         verbose_name_plural = 'Любимые'
 
     def __str__(self) -> str:
+        """Отобращает название в виде Пользователь/Рецепт."""
         return str(self.user) + '/' + str(self.recipe)
 
 
 class ShoppingCart(models.Model):
-    """Добавление рецепта в корзину"""
+    """Добавление рецепта в корзину."""
+
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,
                              related_name='shoppingcart')
@@ -160,13 +174,19 @@ class ShoppingCart(models.Model):
         verbose_name_plural = 'Корзины'
 
     def __str__(self) -> str:
+        """Отобращает название в виде Пользователь/Рецепт."""
         return str(self.user) + '/' + str(self.recipe)
 
 
 class Follow(models.Model):
-    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='follower')
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='author')
+    """Подписка на автора."""
 
+    follower = models.ForeignKey(User,
+                                 on_delete=models.CASCADE,
+                                 related_name='follower')
+    author = models.ForeignKey(User,
+                               on_delete=models.CASCADE,
+                               related_name='author')
 
     class Meta:
         constraints = [models.UniqueConstraint(
@@ -177,4 +197,5 @@ class Follow(models.Model):
         verbose_name_plural = 'Подписки'
 
     def __str__(self) -> str:
+        """Отобращает название в виде Подписчик/Автор."""
         return str(self.follower) + '/' + str(self.author)

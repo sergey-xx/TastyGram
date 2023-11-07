@@ -6,6 +6,8 @@ User = get_user_model()
 
 
 class CustomUserAdmin(UserAdmin):
+    """Кастомизация админки Пользователей."""
+
     list_display = ['username', 'email', ]
     search_fields = (
         "email",
@@ -13,5 +15,6 @@ class CustomUserAdmin(UserAdmin):
     list_filter = [
          "email",
     ]
+
 
 admin.site.register(User, CustomUserAdmin)

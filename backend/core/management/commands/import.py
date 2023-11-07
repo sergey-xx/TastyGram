@@ -1,16 +1,17 @@
 from django.core.management.base import BaseCommand
 from io import open
-import json, os
+import json
+import os
 
 from recipes.models import Ingredient
 
 
 def ingredient_import_json():
-    """Импорт объектов ингредиентов из json-файла"""
+    """Импорт объектов ингредиентов из json-файла."""
     os.chdir('..')
     os.chdir('data')
     full_path = os.getcwd()
-    with open(full_path + r'\ingredients.json',
+    with open(full_path + r'/ingredients.json',
               encoding='utf-8') as f:
         data = json.load(f)
         for object in data:
@@ -25,6 +26,8 @@ def ingredient_import_json():
 
 
 class Command(BaseCommand):
+    """Импорт ингредиентов."""
+
     help = 'Command to import ingredients'
 
     def handle(self, *args, **options):

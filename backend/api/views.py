@@ -225,7 +225,6 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
     @action(methods=['delete'], detail=True,
             permission_classes=[IsAuthenticated])
     def delete(self, request, *args, **kwargs):
-        # recipe = kwargs.get('title_id')
         title_id = self.kwargs.get('title_id')
         recipe = get_object_or_404(Recipe, id=title_id)
         if ShoppingCart.objects.filter(recipe=recipe,
@@ -237,12 +236,12 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
         shopping_cart.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 class DownloadViewSet(APIView):
     permission_classes = (AllowAny,)
 
     def merge_shopping_cart(self, request):
         shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
-        # shopping_cart = ShoppingCart.objects.filter(user=1)
         recipes = []
         for item in shopping_cart:
             recipes.append(item.recipe)
@@ -256,7 +255,7 @@ class DownloadViewSet(APIView):
                 if name in items:
                     items[name] += amount
                 else:
-                     items[name] = amount
+                    items[name] = amount
         return items
 
     def get(self, request):
