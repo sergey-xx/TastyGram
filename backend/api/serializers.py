@@ -103,9 +103,7 @@ class UserCreateSerializer(UserSerializer):
                             'username',
                             'first_name',
                             'last_name',)
-        extra_kwargs = {
-                'password': {'write_only': True},
-                }
+        extra_kwargs = {'password': {'write_only': True}, }
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -161,8 +159,7 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
                                  required=False)
     measurement_unit = serializers.CharField(
         source='ingredient.measurement_unit',
-        required=False
-        )
+        required=False)
 
     class Meta:
         model = RecipeIngredient
@@ -443,9 +440,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'name', 'image', 'cooking_time')
         model = Favorite
 
-        extra_kwargs = {
-                'user': {'write_only': True},
-                'recipe': {'write_only': True}, }
+        extra_kwargs = {'user': {'write_only': True},
+                        'recipe': {'write_only': True}, }
 
 
 class FollowSerializer(serializers.ModelSerializer):

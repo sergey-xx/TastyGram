@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 
 from .validators import time_validator
 
@@ -124,8 +124,8 @@ class RecipeIngredient(models.Model):
 
     def __str__(self) -> str:
         """Отобращает название в виде Ингредиент/Рецепт/Количество."""
-        return (str(self.ingredient) + '/' +
-                str(self.recipe) + '/' + str(self.amount))
+        return (str(self.ingredient) + '/'
+                + str(self.recipe) + '/' + str(self.amount))
 
 
 class Favorite(models.Model):

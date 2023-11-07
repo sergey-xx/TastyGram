@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -9,7 +9,6 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
-# SECRET_KEY = 'django-insecure-%x%lg4mv5ud25q@9v*&sq3k7&usb8ya@#i12+o*2+t+e31$4t5'
 DEBUG = os.getenv('DEBUG') in ['TRUE', 'true', '1', 'yes']
 
 # Quick-start development settings - unsuitable for production
@@ -32,7 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'django_filters', 
+    'django_filters',
     'api.apps.ApiConfig',
     'recipes.apps.RecipesConfig',
     'core.apps.CoreConfig',
@@ -173,14 +172,11 @@ DJOSER = {
     'SERIALIZERS': {
         'user': 'api.serializers.UserSerializer',
         'user_list': 'api.serializers.UserSerializer',
-        'user_create': 'api.serializers.UserCreateSerializer',
-        },
+        'user_create': 'api.serializers.UserCreateSerializer', },
     'LOGIN_FIELD': 'email',
     'PERMISSIONS': {
-    # 'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
-    'user': ['api.permissions.IsOwnerOrReadOnly'],
-    'user_list': ['rest_framework.permissions.AllowAny'],
-},
+        'user': ['api.permissions.IsOwnerOrReadOnly'],
+        'user_list': ['rest_framework.permissions.AllowAny'], },
     'HIDE_USERS': False,
 }
 

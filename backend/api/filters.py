@@ -34,7 +34,6 @@ class RecipeFilter(django_filters.FilterSet):
 
         Queryset генерируется из БД.
         """
-
         if self.request.query_params.get('is_favorited') == '1':
             if self.request.user.is_anonymous:
                 return Recipe.objects.all()
