@@ -1,25 +1,18 @@
 import re
 import base64
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from django.contrib.auth.hashers import make_password
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.serializers import raise_errors_on_nested_writes, traceback
 from rest_framework.utils import model_meta
 from rest_framework.validators import UniqueValidator
-from collections import OrderedDict
-from rest_framework.relations import Hyperlink, PKOnlyObject
-from rest_framework.fields import (  # NOQA # isort:skip
-    CreateOnlyDefault, CurrentUserDefault, SkipField, empty
-)
 
 from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient,
                             Favorite, ShoppingCart, Follow, Ingredient,
                             RecipeTag)
 
-# User = get_user_model()
-from users.models import CustomUser as User
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -126,19 +119,6 @@ class TagSerializer(serializers.ModelSerializer):
             if re.search(pattern, slug):
                 return slug
 
-
-# class TagRecipeCrateSerializer(serializers.ModelSerializer):
-#     id = serializers.PrimaryKeyRelatedField(source='tag',
-#                                             queryset=Ingredient.objects.all(),
-#                                             required=True)
-    
-#     name = serializers.CharField(source='tag',
-#                                  required=False)
-    
-#     class Meta:
-#         fields = ('id',
-#                   'name')
-#         model = RecipeTag
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -260,10 +240,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 class RecipeCreateSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
                                               many=True)
-    # tags = serializers.PrimaryKeyRelatedField(required=True,
-    #                                           allow_null=True,
-    #                                           many=True,
-    #                                           queryset=Tag.objects.all(),)
     ingredients = RecipeIngredientCreateSerializer(source='recipeingredient',
                                                   many=True,
                                                   required=True,
@@ -499,38 +475,6 @@ class FollowSerializer(serializers.ModelSerializer):
 
         return representation
 
-
-# class FollowListSerializer(serializers.ModelSerializer):
-#     username = serializers.StringRelatedField(source='author.username')
-#     first_name = serializers.StringRelatedField(source='author.first_name')
-#     last_name = serializers.StringRelatedField(source='author.last_name')
-#     recipes = RecipeFollowSerializer(read_only=True, many=True, source='author.recipe')
-#     # is_subscribed = serializers.SerializerMethodField()
-#     # recipes_count = serializers.SerializerMethodField()
-#     email = serializers.StringRelatedField(source='author.email')
-
-#     class Meta:
-#         fields = ('email',
-#                   'id',
-#                   'username',
-#                   'first_name',
-#                   'last_name',
-#                 #   'is_subscribed',
-#                   'recipes',
-#                 #   'recipes_count'
-#                   )
-
-#         read_only_fields = ('email',
-#                             'id',
-#                             'username',
-#                             'first_name',
-#                             'last_name',
-#                             # 'is_subscribed',
-#                             'recipes',
-#                             # 'recipes_count',
-#                             )
-
-#         model = Follow
 
 
 class IngredientSerializer(serializers.ModelSerializer):
