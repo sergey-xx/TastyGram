@@ -302,7 +302,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def validate_tags(self, tags):
         unique = set()
         for tag in tags:
-            print(tag.id)
+            # print(tag.id)
             if tag.id in unique:
                 raise serializers.ValidationError(
                 'tag не могут повторяться')
@@ -328,7 +328,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         items = validated_data.pop('recipeingredient')
-        print(items)
+        # print(items)
         raise_errors_on_nested_writes('create', self, validated_data)
         ModelClass = self.Meta.model
         info = model_meta.get_field_info(ModelClass)
@@ -489,8 +489,6 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        print(representation.get('recipes'))
-        print(len(representation.get('recipes')))
         recipes = representation.get('recipes')
         lenth = len(recipes)
         limit = self.context.get('request').query_params.get('recipes_limit')
@@ -542,3 +540,26 @@ class IngredientSerializer(serializers.ModelSerializer):
                   'name',
                   'measurement_unit')
         model = Ingredient
+
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    # class RecipeFollowSerializer(serializers.ModelSerializer):
+    id = serializers.PrimaryKeyRelatedField(source='recipe', read_only=True)
+    name = serializers.StringRelatedField(source='recipe.name', read_only=True)
+    cooking_time = serializers.IntegerField(source='recipe.cooking_time',
+                                            required=False,
+                                            read_only=True)
+    image = Base64ImageField(source='recipe.image', required=False, allow_null=True)
+
+    class Meta:
+        fields = ('id',
+                  'name',
+                  'image',
+                  'cooking_time'
+                  )
+        read_only_fields = ('id',
+                  'name',
+                  'image',
+                  'cooking_time'
+                  )
+        model = ShoppingCart

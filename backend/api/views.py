@@ -19,8 +19,10 @@ from recipes.models import (Tag, Recipe, RecipeIngredient, Favorite, Follow,
 from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
                           RecipeCreateSerializer, UserMeSerializer,
                           FavoriteSerializer, RecipeAnonymSerializer,
-                          FollowSerializer, IngredientSerializer)
+                          FollowSerializer, IngredientSerializer,
+                          ShoppingCartSerializer)
 from .permissions import IsOwnerOrReadOnly
+from .filters import RecipeFilter
 
 User = get_user_model()
 
@@ -74,7 +76,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                           IsOwnerOrReadOnly)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('author',) 
+    filterset_class = RecipeFilter
+    # filterset_fields = ('author', 'is_in_shopping_cart', 'is_favorited')
+
 
     def get_serializer_class(self):
         if self.request.user.is_anonymous:
@@ -108,7 +112,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         recipe = self._get_title()
         result = Favorite.objects.filter(user=self.request.user, recipe=recipe).exists()
         if result:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError('Рецепт уже в избранном')
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -137,22 +141,6 @@ class FollowViewSet(viewsets.ModelViewSet):
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post','delete']
-    pagination_class = LimitOffsetPagination
-
-    def paginate_queryset(self, queryset):
-        """
-        Return a single page of results, or `None` if pagination is disabled.
-        """
-        if self.paginator is None:
-            return None
-        return self.paginator.paginate_queryset(queryset, self.request, view=self)
-    
-    def get_paginated_response(self, data):
-        """
-        Return a paginated style `Response` object for the given output data.
-        """
-        assert self.paginator is not None
-        return self.paginator.get_paginated_response(data)
 
 
     def _get_title(self):
@@ -163,10 +151,8 @@ class FollowViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         author = self._get_title()
-        print(self.request.user)
-        print(author)
         if author == self.request.user:
-            raise serializers.ValidationError('Нельзя подписаться на самого сетя!')
+            raise serializers.ValidationError('Нельзя подписаться на самого себя!')
         if Follow.objects.filter(follower=self.request.user,
                                  author=author).exists():
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -183,13 +169,14 @@ class FollowViewSet(viewsets.ModelViewSet):
     @action(methods=['delete'], detail=True,
             permission_classes=[IsAuthenticated])
     def delete(self, request, *args, **kwargs):
-        title_id = kwargs.get('title_id')
-        follow = Follow.objects.filter(author=title_id,
+        author = kwargs.get('title_id')
+        # follow = Follow.objects.filter(author=author,
+        #                                follower=self.request.user)
+        follow = get_object_or_404(Follow, author=author,
                                        follower=self.request.user)
-        if follow.exists():
-            follow[0].delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        follow.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        # return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class FollowListViewSet(mixins.ListModelMixin,
@@ -213,7 +200,42 @@ class IngredientViewSet(viewsets.ModelViewSet):
     filterset_fields = ('name',) 
 
 
+class ShoppingCartViewSet(viewsets.ModelViewSet):
+    queryset = ShoppingCart.objects.all()
+    serializer_class = ShoppingCartSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['post', 'delete']
+    # lookup_field = 'id'
+    pagination_class = PageNumberPagination
 
+    def _get_title(self):
+        title_id = self.kwargs.get('title_id')
+        return get_object_or_404(Recipe, id=title_id)
+
+    def perform_create(self, serializer):
+        recipe = self._get_title()
+        print(recipe)
+        print(self.request.user)
+        if ShoppingCart.objects.filter(user=self.request.user,
+                                   recipe=recipe).count() > 0:
+             raise serializers.ValidationError('Рецепт уже в корзине')
+        serializer.save(user=self.request.user,
+                                   recipe=recipe,)
+    
+    @action(methods=['delete'], detail=True,
+            permission_classes=[IsAuthenticated])
+    def delete(self, request, *args, **kwargs):
+        # recipe = kwargs.get('title_id')
+        title_id = self.kwargs.get('title_id')
+        recipe = get_object_or_404(Recipe, id=title_id)
+        if ShoppingCart.objects.filter(recipe=recipe,
+                                       user=self.request.user).count() < 1:
+            raise serializers.ValidationError('Рецепт не был ранее добавлен '
+                                              'в корзину')
+        shopping_cart = get_object_or_404(ShoppingCart, recipe=recipe,
+                                       user=self.request.user)
+        shopping_cart.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class DownloadViewSet(APIView):
     permission_classes = (AllowAny,)
