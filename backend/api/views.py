@@ -11,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework import serializers
 
+from core.pagination import CustomPagination
 from recipes.models import (Tag, Recipe, RecipeIngredient, Favorite, Follow,
                             Ingredient, ShoppingCart)
 from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
@@ -19,7 +20,6 @@ from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
                           IngredientSerializer, ShoppingCartSerializer)
 from .permissions import IsOwnerOrReadOnly
 from .filters import RecipeFilter
-from core.pagination import CustomPagination
 
 User = get_user_model()
 
@@ -284,12 +284,15 @@ class DownloadViewSet(APIView):
         for recipe in recipes:
             recipeingredients = RecipeIngredient.objects.filter(recipe=recipe)
             for recipeingredient in recipeingredients:
-                name = recipeingredient.ingredient.name
+                name = (f'{recipeingredient.ingredient.name} '
+                        f'({recipeingredient.ingredient.measurement_unit})')
                 amount = recipeingredient.amount
                 if name in items:
                     items[name] += amount
                 else:
                     items[name] = amount
+        print(items)
+        print(self.request.user)
         return items
 
     def get(self, request):
@@ -299,11 +302,12 @@ class DownloadViewSet(APIView):
             os.remove('shopping_cart.txt')
 
         with open('shopping_cart.txt', 'x') as file:
+            file.write('Список покупок' + '\n' + '\n')
             for key, item in items.items():
-                file.write(key + '\t' + str(item) + '\n')
+                file.write('- ' + key + ': ' + str(item) + '\n')
 
         with open('shopping_cart.txt', 'r') as file:
-            response = HttpResponse(file, content_type='text/csv',
+            response = HttpResponse(file, content_type='text/txt',
                                     status=status.HTTP_200_OK)
             response['Content-Disposition'] = ('attachment; '
                                                'filename=shopping_cart.txt')
