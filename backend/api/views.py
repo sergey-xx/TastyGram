@@ -221,7 +221,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
     http_method_names = ['get']
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('name',)
+    filterset_fields = ('^name',)
 
 
 class ShoppingCartViewSet(viewsets.ModelViewSet):
