@@ -17,11 +17,11 @@ class RecipeFilter(django_filters.FilterSet):
     author = django_filters.CharFilter(
         field_name='author__id', lookup_expr='iexact'
     )
-    shoppingcart = django_filters.BooleanFilter(
-        field_name='is_in_shopping_cart__id', lookup_expr='isnull'
+    is_in_shopping_cart = django_filters.Filter(
+        field_name='is_in_shopping_cart'
     )
-    favorited = django_filters.BooleanFilter(
-        field_name='is_favorited__id', lookup_expr='isnull'
+    is_favorited = django_filters.Filter(
+        field_name='is_favorited'
     )
 
     class Meta:
@@ -29,18 +29,15 @@ class RecipeFilter(django_filters.FilterSet):
         fields = ('tags', 'is_in_shopping_cart', 'is_favorited')
 
     def filter_queryset(self, queryset):
-        """
-        Для проверки нахождения в Корзине и в Любимых.
+        """Для проверки нахождения в Корзине и в Любимых."""
 
-        Queryset генерируется из БД.
-        """
-        if self.request.query_params.get('is_favorited') == '1':
-            if self.request.user.is_anonymous:
-                return Recipe.objects.all()
-            queryset = super().filter_queryset(queryset)
-            return queryset.filter(favorite__user=self.request.user)
-        if self.request.query_params.get('is_in_shopping_cart') == '1':
-            if self.request.user.is_anonymous:
-                return Recipe.objects.all()
-            return Recipe.objects.filter(shoppingcart__user=self.request.user)
+        is_favorited = self.form.cleaned_data.pop('is_favorited')
+        is_in_shopping_cart = self.form.cleaned_data.pop('is_in_shopping_cart')
+        if not self.request.user.is_anonymous:
+            if is_favorited and is_favorited != '0':
+                queryset = queryset.filter(favorite__user=self.request.user)
+            if is_in_shopping_cart and is_in_shopping_cart != '0':
+                queryset = queryset.filter(shoppingcart__user=self.request.user)
+        
         return super().filter_queryset(queryset)
+
