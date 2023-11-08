@@ -3,7 +3,7 @@ import json
 import os
 from django.core.management.base import BaseCommand
 
-from recipes.models import Ingredient
+from recipes.models import Ingredient as Ingrt
 
 
 def ingredient_import_json():
@@ -15,13 +15,15 @@ def ingredient_import_json():
               encoding='utf-8') as f:
         data = json.load(f)
         for object in data:
+
             try:
-                Ingredient.objects.get_or_create(
-                        name=object["name"],
-                        measurement_unit=object["measurement_unit"])
-                print(f'Объект импортирован: {object["name"]},'
-                      f'{object["measurement_unit"]}')
-            except ImportError:
+                name=object["name"]
+                mu = object["measurement_unit"]
+                ingredient = Ingrt.objects.get_or_create(name=name,
+                                                         measurement_unit=mu)
+                print(f'Объект импортирован: {ingredient},')
+
+            except SystemError:
                 print('Ошибка импортирования')
 
 
