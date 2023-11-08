@@ -37,7 +37,7 @@ class RecipeFilter(django_filters.FilterSet):
         if self.request.query_params.get('is_favorited') == '1':
             if self.request.user.is_anonymous:
                 return Recipe.objects.all()
-            return Recipe.objects.filter(favorite__user=self.request.user)
+            return super().filter_queryset(queryset).filter(favorite__user=self.request.user)
         if self.request.query_params.get('is_in_shopping_cart') == '1':
             if self.request.user.is_anonymous:
                 return Recipe.objects.all()
