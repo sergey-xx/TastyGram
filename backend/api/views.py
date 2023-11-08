@@ -74,7 +74,7 @@ class TagsViewSet(viewsets.ModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для рецептов."""
 
-    queryset = Recipe.objects.all().order_by('id')
+    queryset = Recipe.objects.all().order_by('-pub_date')
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsOwnerOrReadOnly)

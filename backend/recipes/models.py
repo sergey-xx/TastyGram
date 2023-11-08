@@ -62,6 +62,8 @@ class Recipe(models.Model):
     is_in_shopping_cart = models.ManyToManyField(User,
                                                  through='ShoppingCart',
                                                  related_name='products')
+    pub_date = models.DateTimeField('Дата публикации',
+                                    auto_now_add=True)
 
     def __str__(self) -> str:
         """Отобращает название в виде поля имя."""

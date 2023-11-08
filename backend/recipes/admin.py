@@ -40,7 +40,8 @@ class RecipeAdmin(admin.ModelAdmin):
         'cooking_time',
         'get_tag',
         'get_in_shopping_card',
-        'get_is_favorited',)
+        'get_is_favorited',
+        'pub_date')
 
     def get_tag(self, obj):
         """Позволяет увидеть все добавленные Тэги."""
