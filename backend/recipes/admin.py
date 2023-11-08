@@ -18,6 +18,7 @@ class IngredientAdmin(admin.ModelAdmin):
     """Кастомизация админки модели Ингредиентов."""
 
     list_display = ('pk', 'name', 'measurement_unit')
+    search_fields = ('name',)
 
 
 class RecipeIngredientAdmin(admin.ModelAdmin):
@@ -41,19 +42,32 @@ class RecipeAdmin(admin.ModelAdmin):
         'get_tag',
         'get_in_shopping_card',
         'get_is_favorited',
-        'pub_date')
+        'pub_date',
+        'get_favorite_counter')
+
+    search_fields = ('author', 'tags',)
+    list_filter = ('author', 'tags', )
+    readonly_fields = ('get_favorite_counter',)
 
     def get_tag(self, obj):
         """Позволяет увидеть все добавленные Тэги."""
         return ", ".join([p.name for p in obj.tags.all()])
+    get_tag.short_description = 'Теги'
 
     def get_in_shopping_card(self, obj):
         """Позволяет увидеть все добавленные Корзины."""
         return ", ".join([p.username for p in obj.is_in_shopping_cart.all()])
+    get_in_shopping_card.short_description = 'В Корзине'
 
     def get_is_favorited(self, obj):
-        """Позволяет увидеть все добавленные в Избранное."""
+        """Позволяет увидеть все добавленные в Любимые."""
         return ", ".join([p.username for p in obj.is_favorited.all()])
+    get_is_favorited.short_description = 'В избранном'
+
+    def get_favorite_counter(self, obj):
+        """Позволяет увидеть кол-во добавлений в Любимые."""
+        return obj.is_favorited.all().count()
+    get_favorite_counter.short_description = 'Всего в Любимом'
 
 
 class FavoriteAdmin(admin.ModelAdmin):
