@@ -462,7 +462,6 @@ class IngredientSerializer(serializers.ModelSerializer):
 class ShoppingCartSerializer(serializers.ModelSerializer):
     """Сериалайзер добавления Рецепта в Корзину."""
 
-    # class RecipeFollowSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(source='recipe', read_only=True)
     name = serializers.StringRelatedField(source='recipe.name', read_only=True)
     cooking_time = serializers.IntegerField(source='recipe.cooking_time',
