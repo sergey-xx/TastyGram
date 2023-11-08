@@ -55,11 +55,6 @@ class UserCreateSerializer(UserSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
 
-    def create(self, validated_data):
-       """Переопределение create для хэширования паролей."""
-       validated_data['password'] = make_password(validated_data['password'])
-       return super(UserSerializer, self).create(validated_data)
-
     def validate_email(self, email):
         """Валидация почты."""
         if User.objects.filter(email=email):
@@ -87,6 +82,11 @@ class UserCreateSerializer(UserSerializer):
                                               'символов')
         return last_name
 
+    def create(self, validated_data):
+        """Переопределение create для хэширования паролей."""
+        validated_data['password'] = make_password(validated_data['password'])
+        return super(UserSerializer, self).create(validated_data)
+
     class Meta:
         model = User
         fields = ('email',
@@ -106,6 +106,9 @@ class UserCreateSerializer(UserSerializer):
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор Тегов."""
 
+    name = serializers.CharField(max_length=200,
+                                 min_length=1,
+                                 allow_blank=False)
     slug = serializers.SlugField(max_length=200,
                                  min_length=1,
                                  allow_blank=False)
@@ -124,26 +127,6 @@ class TagSerializer(serializers.ModelSerializer):
                 return slug
 
 
-class RecipeIngredientSerializer(serializers.ModelSerializer):
-    """Вспомогательный сериализатор Рецепт/Ингредиент."""
-
-    name = serializers.StringRelatedField(source='ingredient',
-                                          read_only=True)
-    measurement_unit = serializers.StringRelatedField(
-        source='ingredient.measurement_unit',
-        read_only=True,)
-    amount = serializers.IntegerField()
-    id = serializers.PrimaryKeyRelatedField(source='ingredient.id',
-                                            queryset=Ingredient.objects.all(),)
-
-    class Meta:
-        model = RecipeIngredient
-        fields = ('id',
-                  'name',
-                  'measurement_unit',
-                  'amount')
-
-
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     """Вспомогательный сериализатор создания Рецепт/Ингредиент."""
 
@@ -151,9 +134,9 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
                                             queryset=Ingredient.objects.all(),
                                             required=True,
                                             )
-    amount = serializers.IntegerField(required=True, allow_null=False)
     name = serializers.CharField(source='ingredient.name',
                                  required=False)
+    amount = serializers.IntegerField(required=True, allow_null=False)
     measurement_unit = serializers.CharField(
         source='ingredient.measurement_unit',
         required=False)
@@ -186,32 +169,11 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class RecipeAnonymSerializer(serializers.ModelSerializer):
-    """Сериалайзер отображения рецептов для Анонимов."""
-
-    ingredients = RecipeIngredientSerializer(source='recipeingredient',
-                                             many=True)
-    tags = TagSerializer(many=True)
-    image = Base64ImageField(required=False, allow_null=True)
-    author = UserSerializer()
-
-    class Meta:
-        fields = ('id',
-                  'tags',
-                  'author',
-                  'ingredients',
-                  'image',
-                  'name',
-                  'text',
-                  )
-        model = Recipe
-
-
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериалайзер отображения Рецепта."""
 
-    ingredients = RecipeIngredientSerializer(source='recipeingredient',
-                                             many=True)
+    ingredients = RecipeIngredientCreateSerializer(source='recipeingredient',
+                                                   many=True)
     tags = TagSerializer(many=True)
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.SerializerMethodField()
@@ -293,6 +255,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_tags(self, tags):
         """Валидация Тэгов."""
+        print(tags)
         unique = set()
         for tag in tags:
             if tag.id in unique:
@@ -332,12 +295,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
-        if 'recipeingredient' not in validated_data:
-            raise serializers.ValidationError(
-                'Ингредиенты не могут отсутствовать')
         if 'tags' not in validated_data:
             raise serializers.ValidationError(
                 'Тэги не могут отсутствовать')
+
+        if 'recipeingredient' not in validated_data:
+            raise serializers.ValidationError(
+                'Ингредиенты не могут отсутствовать')
+
         items = validated_data.pop('recipeingredient')
         if not items:
             raise serializers.ValidationError(
