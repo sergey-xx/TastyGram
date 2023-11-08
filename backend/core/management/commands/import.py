@@ -4,6 +4,7 @@ import os
 from django.core.management.base import BaseCommand
 
 from recipes.models import Ingredient as Ingrt
+from recipes.models import Ingredient as Ingrt
 
 
 def ingredient_import_json():
@@ -15,6 +16,7 @@ def ingredient_import_json():
               encoding='utf-8') as f:
         data = json.load(f)
         for object in data:
+
 
             try:
                 name = object["name"]
