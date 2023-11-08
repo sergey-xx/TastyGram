@@ -17,7 +17,6 @@ def ingredient_import_json():
         data = json.load(f)
         for object in data:
 
-
             try:
                 name = object["name"]
                 mu = object["measurement_unit"]
