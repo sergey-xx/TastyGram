@@ -5,6 +5,7 @@ volumes:
   pg_data_production:
   static_volume:
   media_volume:
+  data_volume:
 
 services:
   db:
@@ -18,6 +19,7 @@ services:
     volumes:
       - static_volume:/backend_static/
       - media_volume:/media/
+      - data_volume:/data/
   frontend:
     image: sergeyxx/foodgram_frontend
     env_file: .env
