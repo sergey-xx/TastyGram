@@ -85,7 +85,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.user.is_anonymous:
-            # return RecipeAnonymSerializer
             return RecipeSerializer
         if self.action in ('create', 'update', 'partial_update'):
             return RecipeCreateSerializer
@@ -113,6 +112,10 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Recipe, id=title_id)
 
     def create(self, request, *args, **kwargs):
+        title_id = self.kwargs.get('title_id')
+        titles = Recipe.objects.filter(id=title_id)
+        if not titles.exists():
+            raise serializers.ValidationError('Рецепт не существует')
         recipe = self._get_title()
         result = Favorite.objects.filter(user=self.request.user,
                                          recipe=recipe).exists()
@@ -135,8 +138,12 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             detail=True,
             permission_classes=[IsAuthenticated])
     def delete(self, request, *args, **kwargs):
-        title_id = kwargs.get('title_id')
+        title_id = self.kwargs.get('title_id')
+        titles = Recipe.objects.filter(id=title_id)
         get_object_or_404(Recipe, id=title_id)
+        if not titles.exists():
+            raise serializers.ValidationError('Рецепт не существует')
+        title_id = kwargs.get('title_id')
         favorite = Favorite.objects.filter(recipe=title_id,
                                            user=self.request.user)
         if favorite.exists():
@@ -182,6 +189,12 @@ class FollowViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def delete(self, request, *args, **kwargs):
         author = kwargs.get('title_id')
+        get_object_or_404(User,
+                          id=author)
+        follow = Follow.objects.filter(author=author,
+                                       follower=self.request.user)
+        if not follow.exists():
+            raise serializers.ValidationError('Вы не были подписаны!')
         follow = get_object_or_404(Follow,
                                    author=author,
                                    follower=self.request.user)
@@ -228,6 +241,10 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Recipe, id=title_id)
 
     def perform_create(self, serializer):
+        title_id = self.kwargs.get('title_id')
+        titles = Recipe.objects.filter(id=title_id)
+        if not titles.exists():
+            raise serializers.ValidationError('Рецепт не существует')
         recipe = self._get_title()
         if ShoppingCart.objects.filter(user=self.request.user,
                                        recipe=recipe).count() > 0:
@@ -240,6 +257,10 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
     def delete(self, request, *args, **kwargs):
         title_id = self.kwargs.get('title_id')
         recipe = get_object_or_404(Recipe, id=title_id)
+        title_id = self.kwargs.get('title_id')
+        titles = Recipe.objects.filter(id=title_id)
+        if not titles.exists():
+            raise serializers.ValidationError('Рецепт не существует')
         if ShoppingCart.objects.filter(recipe=recipe,
                                        user=self.request.user).count() < 1:
             raise serializers.ValidationError('Рецепт не был ранее добавлен '
