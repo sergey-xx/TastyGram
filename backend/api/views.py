@@ -22,6 +22,7 @@ from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
                           IngredientSerializer, ShoppingCartSerializer)
 from .permissions import IsOwnerOrReadOnly
 from .filters import RecipeFilter
+from core.pagination import CustomPagination
 
 User = get_user_model()
 
@@ -38,7 +39,7 @@ class UsersViewSet(mixins.UpdateModelMixin,
     serializer_class = UserSerializer
     permission_classes = (AllowAny, )
     http_method_names = ['get', 'post']
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPagination
 
 
 class UserMe(APIView):
@@ -78,7 +79,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsOwnerOrReadOnly)
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -104,7 +105,7 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post', 'delete']
     lookup_field = 'id'
-    pagination_class = PageNumberPagination
+    pagination_class = CustomPagination
 
     def _get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -208,7 +209,7 @@ class FollowListViewSet(mixins.ListModelMixin,
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
-    pagination_class = LimitOffsetPagination
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         return Follow.objects.filter(follower=self.request.user)
@@ -233,7 +234,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
     serializer_class = ShoppingCartSerializer
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post', 'delete']
-    pagination_class = PageNumberPagination
+    pagination_class = CustomPagination
 
     def _get_title(self):
         title_id = self.kwargs.get('title_id')
