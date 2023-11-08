@@ -30,14 +30,13 @@ class RecipeFilter(django_filters.FilterSet):
 
     def filter_queryset(self, queryset):
         """Для проверки нахождения в Корзине и в Любимых."""
-
         is_favorited = self.form.cleaned_data.pop('is_favorited')
         is_in_shopping_cart = self.form.cleaned_data.pop('is_in_shopping_cart')
         if not self.request.user.is_anonymous:
             if is_favorited and is_favorited != '0':
                 queryset = queryset.filter(favorite__user=self.request.user)
             if is_in_shopping_cart and is_in_shopping_cart != '0':
-                queryset = queryset.filter(shoppingcart__user=self.request.user)
-        
-        return super().filter_queryset(queryset)
+                queryset = queryset.filter(
+                    shoppingcart__user=self.request.user)
 
+        return super().filter_queryset(queryset)
