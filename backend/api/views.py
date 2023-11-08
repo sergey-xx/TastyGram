@@ -19,7 +19,7 @@ from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
                           FavoriteSerializer, FollowSerializer,
                           IngredientSerializer, ShoppingCartSerializer)
 from .permissions import IsOwnerOrReadOnly
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientFilter
 
 User = get_user_model()
 
@@ -221,7 +221,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
     pagination_class = None
     http_method_names = ['get']
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('^name',)
+    filterset_class = IngredientFilter
+    filterset_fields = ('name',)
 
 
 class ShoppingCartViewSet(viewsets.ModelViewSet):
