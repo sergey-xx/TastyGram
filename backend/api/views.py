@@ -307,7 +307,7 @@ class DownloadViewSet(APIView):
                 file.write('- ' + key + ': ' + str(item) + '\n')
 
         with open('shopping_cart.txt', 'r') as file:
-            response = HttpResponse(file, content_type='text/txt',
+            response = HttpResponse(file, content_type='text/plain',
                                     status=status.HTTP_200_OK)
             response['Content-Disposition'] = ('attachment; '
                                                'filename=shopping_cart.txt')
