@@ -274,7 +274,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
 class DownloadViewSet(APIView):
     """Вьюсет для скачивания списка покупок."""
 
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
     def merge_shopping_cart(self, request):
         shopping_cart = ShoppingCart.objects.filter(user=self.request.user)

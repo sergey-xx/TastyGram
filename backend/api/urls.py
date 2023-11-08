@@ -20,7 +20,6 @@ router.register(r'recipes/(?P<title_id>\d+)/shopping_cart',
 router.register('users/subscriptions', FollowListViewSet, basename='Follow')
 router.register('ingredients', IngredientViewSet, basename='Ingredient')
 
-
 urlpatterns = [
     path('users/me/', UserMe.as_view()),
     path('auth/', include('djoser.urls.authtoken')),

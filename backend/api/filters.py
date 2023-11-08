@@ -11,7 +11,7 @@ class RecipeFilter(django_filters.FilterSet):
     нахождении в любимых и в корзине пользователя.
     """
 
-    tags = django_filters.CharFilter(
+    tags = django_filters.AllValuesMultipleFilter(
         field_name='tags__slug', lookup_expr='iexact'
     )
     author = django_filters.CharFilter(
