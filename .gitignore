@@ -60,6 +60,8 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+db*.sqlite3
+db.json
 
 # Flask stuff:
 instance/
@@ -161,3 +163,6 @@ yarn-error.log*
 
 # static
 static/
+
+# frontend
+frontend/
