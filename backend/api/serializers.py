@@ -363,6 +363,8 @@ class FavoriteSerializer(serializers.ModelSerializer):
 class FollowSerializer(serializers.ModelSerializer):
     """Сериалайзер добавления Автора в Подписку."""
 
+    id = serializers.PrimaryKeyRelatedField(source='author',
+                                            read_only=True)
     username = serializers.StringRelatedField(source='author.username')
     first_name = serializers.StringRelatedField(source='author.first_name')
     last_name = serializers.StringRelatedField(source='author.last_name')
