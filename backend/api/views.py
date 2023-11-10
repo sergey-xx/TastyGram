@@ -1,4 +1,5 @@
 import os
+from django.db.models import Count
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
@@ -203,13 +204,15 @@ class FollowListViewSet(mixins.ListModelMixin,
                         viewsets.GenericViewSet):
     """Вьюсет просмотра списка Подписок."""
 
-    queryset = Follow.objects.all()
+    # queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return Follow.objects.filter(follower=self.request.user)
+        queryset = (
+            Follow.objects.annotate(recipes_count=Count('author__recipe')))
+        return queryset.filter(follower=self.request.user)
 
 
 class IngredientViewSet(viewsets.ModelViewSet):

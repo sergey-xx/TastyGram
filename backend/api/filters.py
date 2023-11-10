@@ -1,4 +1,5 @@
 import django_filters
+from django_filters.widgets import BooleanWidget
 
 from recipes.models import Recipe, Ingredient
 
@@ -12,34 +13,31 @@ class RecipeFilter(django_filters.FilterSet):
     """
 
     tags = django_filters.AllValuesMultipleFilter(
-        field_name='tags__slug', lookup_expr='iexact'
-    )
-    author = django_filters.CharFilter(
-        field_name='author__id', lookup_expr='iexact'
-    )
-    is_in_shopping_cart = django_filters.Filter(
-        field_name='is_in_shopping_cart'
-    )
-    is_favorited = django_filters.Filter(
-        field_name='is_favorited'
-    )
+        field_name='tags__slug', lookup_expr='iexact')
+
+    is_in_shopping_cart = django_filters.BooleanFilter(
+        field_name='is_in_shopping_cart',
+        method='filter_is_in_shopping_cart',
+        widget=BooleanWidget())
+
+    is_favorited = django_filters.BooleanFilter(
+        field_name='is_favorited',
+        method='filter_is_favorited',
+        widget=BooleanWidget())
+
+    def filter_is_in_shopping_cart(self, queryset, name, value):
+        if self.request.user.is_anonymous:
+            return queryset
+        return queryset.filter(shoppingcart__user=self.request.user)
+
+    def filter_is_favorited(self, queryset, name, value):
+        if self.request.user.is_anonymous:
+            return queryset
+        return queryset.filter(favorite__user=self.request.user)
 
     class Meta:
         model = Recipe
-        fields = ('tags', 'is_in_shopping_cart', 'is_favorited')
-
-    def filter_queryset(self, queryset):
-        """Для проверки нахождения в Корзине и в Любимых."""
-        is_favorited = self.form.cleaned_data.pop('is_favorited')
-        is_in_shopping_cart = self.form.cleaned_data.pop('is_in_shopping_cart')
-        if not self.request.user.is_anonymous:
-            if is_favorited and is_favorited != '0':
-                queryset = queryset.filter(favorite__user=self.request.user)
-            if is_in_shopping_cart and is_in_shopping_cart != '0':
-                queryset = queryset.filter(
-                    shoppingcart__user=self.request.user)
-
-        return super().filter_queryset(queryset)
+        fields = ('tags', 'is_in_shopping_cart', 'is_favorited', 'author')
 
 
 class IngredientFilter(django_filters.FilterSet):

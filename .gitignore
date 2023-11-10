@@ -166,3 +166,6 @@ static/
 
 # frontend
 frontend/
+
+# vscode
+.vscode/

@@ -5,6 +5,8 @@ from django.contrib.auth.hashers import make_password
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from django.conf import settings
+
 
 from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient,
                             Favorite, ShoppingCart, Follow,)
@@ -47,11 +49,12 @@ class UserMeSerializer(UserSerializer):
 class UserCreateSerializer(UserSerializer):
     """Сериализатор создания пользователей."""
 
-    email = serializers.EmailField(required=True)
+    email = serializers.EmailField(required=True,
+                                   max_length=settings.MAX_EMAIL_LEN)
     username = serializers.CharField(required=True,
-                                     max_length=100,
+                                     max_length=settings.MAX_USER_LEN,
                                      validators=[UniqueValidator(
-                                         queryset=User.objects.all())])
+                                                 queryset=User.objects.all())])
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
 
@@ -64,20 +67,20 @@ class UserCreateSerializer(UserSerializer):
 
     def validate_username(self, username):
         """Валидация username."""
-        pattern = r'^[\w.@+-]+$'
-        if re.search(pattern, username):
+        if re.search(settings.USERNAME_PATTERN, username):
             return username
         raise serializers.ValidationError('Имя не может содержать специальные '
                                           'символы')
 
     def validate_first_name(self, first_name):
-        if len(first_name) > 150:
-            raise serializers.ValidationError('Имя не может быть длиннее 150 '
+        if len(first_name) > settings.MAX_USER_LEN:
+            raise serializers.ValidationError('Имя не может быть длиннее '
+                                              f'{settings.MAX_USER_LEN} '
                                               'символов')
         return first_name
 
     def validate_last_name(self, last_name):
-        if len(last_name) > 150:
+        if len(last_name) > settings.MAX_USER_LEN:
             raise serializers.ValidationError('Имя не может быть длиннее 150 '
                                               'символов')
         return last_name
@@ -106,10 +109,10 @@ class UserCreateSerializer(UserSerializer):
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор Тегов."""
 
-    name = serializers.CharField(max_length=200,
+    name = serializers.CharField(max_length=settings.MAX_TAG_LEN,
                                  min_length=1,
                                  allow_blank=False)
-    slug = serializers.SlugField(max_length=200,
+    slug = serializers.SlugField(max_length=settings.MAX_TAG_LEN,
                                  min_length=1,
                                  allow_blank=False)
 
@@ -122,9 +125,14 @@ class TagSerializer(serializers.ModelSerializer):
 
         def validate_slug(self, slug):
             """Валидация поля Slug."""
-            pattern = r'^[-a-zA-Z0-9_]'
-            if re.search(pattern, slug):
+            if re.search(settings.TAG_SLUG_PATTERN, slug):
                 return slug
+
+        def validate_color(self, color):
+            """Валидация поля Color."""
+            pattern = r'#[A-F0-9_]{6}'
+            if re.search(pattern, color):
+                return color
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
@@ -136,7 +144,8 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
                                             )
     name = serializers.CharField(source='ingredient.name',
                                  required=False)
-    amount = serializers.IntegerField(required=True, allow_null=False)
+    amount = serializers.IntegerField(required=True,
+                                      allow_null=False,)
     measurement_unit = serializers.CharField(
         source='ingredient.measurement_unit',
         required=False)
@@ -255,7 +264,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_tags(self, tags):
         """Валидация Тэгов."""
-        print(tags)
         unique = set()
         for tag in tags:
             if tag.id in unique:
@@ -265,6 +273,16 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Тэги не могут отсутствовать')
         return tags
+
+    def validate(self, attrs):
+        if 'tags' not in attrs:
+            raise serializers.ValidationError(
+                'Тэги не могут отсутствовать')
+
+        if 'recipeingredient' not in attrs:
+            raise serializers.ValidationError(
+                'Ингредиенты не могут отсутствовать')
+        return attrs
 
     def get_is_favorited(self, obj):
         """Получение нахождения в Любимых."""
@@ -282,41 +300,30 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         favorite = ShoppingCart.objects.filter(user=user, recipe=obj)
         return favorite.exists()
 
+    def create_ingredient(self, items, instance):
+        ingredients = []
+        for item in items:
+            ingredients.append(
+                RecipeIngredient(recipe=instance,
+                                 ingredient=item.get('ingredient').get('id'),
+                                 amount=item['amount']))
+        RecipeIngredient.objects.bulk_create(ingredients)
+
     def create(self, validated_data):
         """Кастомная функция создания рецепта."""
         items = validated_data.pop('recipeingredient')
         instance = super().create(validated_data)
-
-        for item in items:
-            RecipeIngredient.objects.create(
-                recipe=instance,
-                ingredient=item.get('ingredient').get('id'),
-                amount=item['amount'])
+        self.create_ingredient(items, instance)
         return instance
 
     def update(self, instance, validated_data):
-        if 'tags' not in validated_data:
-            raise serializers.ValidationError(
-                'Тэги не могут отсутствовать')
-
-        if 'recipeingredient' not in validated_data:
-            raise serializers.ValidationError(
-                'Ингредиенты не могут отсутствовать')
-
         items = validated_data.pop('recipeingredient')
-        if not items:
-            raise serializers.ValidationError(
-                'Ингредиенты не могут быть пустыми')
+        # if not items:
+        #     raise serializers.ValidationError(
+        #         'Ингредиенты не могут быть пустыми')
+        RecipeIngredient.objects.filter(recipe=instance).delete()
         instance = super().update(instance, validated_data)
-
-        for item in items:
-            RecipeIngredient.objects.filter(recipe=instance).delete()
-            for item in items:
-                RecipeIngredient.objects.create(
-                    recipe=instance,
-                    ingredient=item.get('ingredient').get('id'),
-                    amount=item['amount'])
-
+        self.create_ingredient(items, instance)
         return instance
 
     def to_representation(self, instance):
@@ -371,7 +378,7 @@ class FollowSerializer(serializers.ModelSerializer):
     recipes = RecipeFollowSerializer(read_only=True,
                                      many=True, source='author.recipe')
     is_subscribed = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField(read_only=True)
     email = serializers.StringRelatedField(source='author.email')
 
     class Meta:
@@ -396,23 +403,21 @@ class FollowSerializer(serializers.ModelSerializer):
         model = Follow
 
     def get_is_subscribed(self, obj):
-        if obj:
+        if Follow.objects.filter(follower=self.context.get('request').user,
+                                 author=obj.author).exists():
             return True
-
-    def get_recipes_count(self, obj):
-        recipes_count = Recipe.objects.filter(author=obj.author).count()
-        return recipes_count
+        return False
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         recipes = representation.get('recipes')
-        lenth = len(recipes)
+        length = len(recipes)
+        representation['recipes_count'] = length
         limit = self.context.get('request').query_params.get('recipes_limit')
         if limit:
             limit = int(limit)
-            if lenth > limit:
+            if length > limit:
                 representation['recipes'] = recipes[:limit]
-
         return representation
 
 
