@@ -366,6 +366,19 @@ class FavoriteSerializer(serializers.ModelSerializer):
         extra_kwargs = {'user': {'write_only': True},
                         'recipe': {'write_only': True}, }
 
+    def validate(self, attrs):
+        recipe_id = self.context.get(
+            'request').parser_context.get('kwargs').get('title_id')
+        recipe = Recipe.objects.filter(id=recipe_id)
+        if not recipe.exists():
+            raise serializers.ValidationError('Рецепт не существует')
+        user = self.context.get('request').user
+        is_exists = Favorite.objects.filter(user=user,
+                                            recipe=int(recipe_id)).exists()
+        if is_exists:
+            raise serializers.ValidationError('Рецепт уже в избранном')
+        return attrs
+
 
 class FollowSerializer(serializers.ModelSerializer):
     """Сериалайзер добавления Автора в Подписку."""
@@ -419,6 +432,18 @@ class FollowSerializer(serializers.ModelSerializer):
             if length > limit:
                 representation['recipes'] = recipes[:limit]
         return representation
+
+    def validate(self, attrs):
+        author_id = int(self.context.get(
+            'request').parser_context.get('kwargs').get('title_id'))
+        user_id = self.context.get('request').user.id
+        if author_id == user_id:
+            raise serializers.ValidationError('Нельзя подписаться на самого '
+                                              'себя')
+        if Follow.objects.filter(follower=user_id,
+                                 author=author_id).exists():
+            raise serializers.ValidationError('Вы уже подписаны')
+        return attrs
 
 
 class IngredientSerializer(serializers.ModelSerializer):

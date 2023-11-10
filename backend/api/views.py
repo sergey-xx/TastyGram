@@ -1,8 +1,6 @@
-import os
 from django.db.models import Count
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, mixins, status
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
@@ -13,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework import serializers
 
 from core.pagination import CustomPagination
-from recipes.models import (Tag, Recipe, RecipeIngredient, Favorite, Follow,
+from recipes.models import (Tag, Recipe, Favorite, Follow,
                             Ingredient, ShoppingCart)
 from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
                           RecipeCreateSerializer, UserMeSerializer,
@@ -46,8 +44,7 @@ class UserMe(APIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        user = request.user
-        serializer = UserMeSerializer(user)
+        serializer = UserMeSerializer(request.user)
         return Response(serializer.data)
 
     def patch(self, request):
@@ -96,7 +93,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class FavoriteViewSet(viewsets.ModelViewSet):
-    """Вьюсет добавления в избранные."""
+    """Вьюсет добавления в Любимые."""
 
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
@@ -110,15 +107,11 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         return get_object_or_404(Recipe, id=title_id)
 
     def create(self, request, *args, **kwargs):
-        title_id = self.kwargs.get('title_id')
-        titles = Recipe.objects.filter(id=title_id)
-        if not titles.exists():
-            raise serializers.ValidationError('Рецепт не существует')
-        recipe = self._get_title()
-        result = Favorite.objects.filter(user=self.request.user,
-                                         recipe=recipe).exists()
-        if result:
-            raise serializers.ValidationError('Рецепт уже в избранном')
+        # recipe = self._get_title()
+        # result = Favorite.objects.filter(user=self.request.user,
+        #                                  recipe=recipe).exists()
+        # if result:
+        #     raise serializers.ValidationError('Рецепт уже в избранном')
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -136,18 +129,19 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             detail=True,
             permission_classes=[IsAuthenticated])
     def delete(self, request, *args, **kwargs):
-        title_id = self.kwargs.get('title_id')
-        titles = Recipe.objects.filter(id=title_id)
-        get_object_or_404(Recipe, id=title_id)
+        recipe_id = self.kwargs.get('title_id')
+        titles = Recipe.objects.filter(id=recipe_id)
+        get_object_or_404(Recipe, id=recipe_id)
         if not titles.exists():
             raise serializers.ValidationError('Рецепт не существует')
-        title_id = kwargs.get('title_id')
-        favorite = Favorite.objects.filter(recipe=title_id,
+        # title_id = kwargs.get('title_id')
+        favorite = Favorite.objects.filter(recipe=recipe_id,
                                            user=self.request.user)
         if favorite.exists():
-            favorite[0].delete()
+            favorite.first().delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response('Вы не были подписаны.',
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class FollowViewSet(viewsets.ModelViewSet):
@@ -165,13 +159,13 @@ class FollowViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        author = self._get_title()
-        if author == self.request.user:
-            raise serializers.ValidationError('Нельзя подписаться на самого '
-                                              'себя!')
-        if Follow.objects.filter(follower=self.request.user,
-                                 author=author).exists():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        # author = self._get_title()
+        # if author == self.request.user:
+        #     raise serializers.ValidationError('Нельзя подписаться на самого '
+        #                                       'себя!')
+        # if Follow.objects.filter(follower=self.request.user,
+        #                          author=author).exists():
+        #     return Response(status=status.HTTP_400_BAD_REQUEST)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED,
@@ -192,11 +186,12 @@ class FollowViewSet(viewsets.ModelViewSet):
         follow = Follow.objects.filter(author=author,
                                        follower=self.request.user)
         if not follow.exists():
-            raise serializers.ValidationError('Вы не были подписаны!')
-        follow = get_object_or_404(Follow,
-                                   author=author,
-                                   follower=self.request.user)
-        follow.delete()
+            raise serializers.ValidationError('Вы не были подписаны')
+        # follow = get_object_or_404(Follow,
+        #                            author=author,
+        #                            follower=self.request.user)
+
+        follow.first().delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -271,51 +266,3 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
                                           user=self.request.user)
         shopping_cart.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class DownloadViewSet(APIView):
-    """Вьюсет для скачивания списка покупок."""
-
-    permission_classes = (IsAuthenticated,)
-
-    def merge_shopping_cart(self, request):
-        shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
-        recipes = []
-        for item in shopping_cart:
-            recipes.append(item.recipe)
-
-        items = dict()
-        for recipe in recipes:
-            recipeingredients = RecipeIngredient.objects.filter(recipe=recipe)
-            for recipeingredient in recipeingredients:
-                name = (f'{recipeingredient.ingredient.name} '
-                        f'({recipeingredient.ingredient.measurement_unit})')
-                amount = recipeingredient.amount
-                if name in items:
-                    items[name] += amount
-                else:
-                    items[name] = amount
-        print(items)
-        print(self.request.user)
-        return items
-
-    def get(self, request):
-        items = self.merge_shopping_cart(request)
-
-        if os.path.exists('shopping_cart.txt'):
-            os.remove('shopping_cart.txt')
-
-        with open('shopping_cart.txt', 'x') as file:
-            file.write('Список покупок' + '\n' + '\n')
-            for key, item in items.items():
-                file.write('- ' + key + ': ' + str(item) + '\n')
-
-        with open('shopping_cart.txt', 'r') as file:
-            response = HttpResponse(file, content_type='text/plain',
-                                    status=status.HTTP_200_OK)
-            response['Content-Disposition'] = ('attachment; '
-                                               'filename=shopping_cart.txt')
-
-        if os.path.exists('shopping_cart.txt'):
-            os.remove('shopping_cart.txt')
-        return response
