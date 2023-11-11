@@ -6,8 +6,7 @@ from .views import (UserMe, TagsViewSet, RecipeViewSet,
                     FollowViewSet,
                     FollowListViewSet,
                     IngredientViewSet,
-                    ShoppingCartViewSet
-                    )
+                    ShoppingCartViewSet)
 from .utils import DownloadViewSet
 
 router = DefaultRouter()

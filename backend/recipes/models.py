@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from .validators import time_validator
+from .validators import time_validator, amount_validator
 
 User = get_user_model()
 
@@ -13,13 +13,13 @@ class Tag(models.Model):
     color = models.CharField('Цвет', max_length=7, null=True, default=None)
     slug = models.SlugField('Slug', max_length=200, unique=True)
 
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+
     def __str__(self) -> str:
         """Отобращает название в виде имени."""
         return self.name
-
-    class Meta:
-        verbose_name = 'Тэг'
-        verbose_name_plural = 'Тэги'
 
 
 class Ingredient(models.Model):
@@ -29,13 +29,13 @@ class Ingredient(models.Model):
     measurement_unit = models.CharField('Единица измерения',
                                         max_length=200)
 
-    def __str__(self) -> str:
-        """Отобращает название в виде имени."""
-        return self.name
-
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+
+    def __str__(self) -> str:
+        """Отобращает название в виде имени."""
+        return self.name
 
 
 class Recipe(models.Model):
@@ -65,13 +65,13 @@ class Recipe(models.Model):
     pub_date = models.DateTimeField('Дата публикации',
                                     auto_now_add=True)
 
-    def __str__(self) -> str:
-        """Отобращает название в виде поля имя."""
-        return str(self.name)
-
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+
+    def __str__(self) -> str:
+        """Отобращает название в виде поля имя."""
+        return self.name
 
 
 class RecipeTag(models.Model):
@@ -89,8 +89,8 @@ class RecipeTag(models.Model):
                                related_name='recipetag')
 
     class Meta:
-        verbose_name = 'Рецепт/тэг'
-        verbose_name_plural = 'Рецепты/тэги'
+        verbose_name = 'Рецепт/тег'
+        verbose_name_plural = 'Рецепты/теги'
         constraints = [models.UniqueConstraint(
             fields=['tag', 'recipe'],
             name='unique_recipe_tag'
@@ -98,13 +98,14 @@ class RecipeTag(models.Model):
 
     def __str__(self) -> str:
         """Отобращает название в виде Рецепт/Тэг."""
-        return str(self.recipe) + '/' + str(self.tag)
+        return f'{self.recipe} / {self.tag}'
 
 
 class RecipeIngredient(models.Model):
     """Класс связи рецептов с ингредиентами."""
 
-    amount = models.IntegerField()
+    amount = models.IntegerField('Количество',
+                                 validators=[amount_validator, ])
     ingredient = models.ForeignKey(Ingredient,
                                    on_delete=models.CASCADE,
                                    blank=False,
@@ -131,7 +132,7 @@ class RecipeIngredient(models.Model):
 
 
 class Favorite(models.Model):
-    """Добавление рецептов в Любимые."""
+    """Добавление рецептов в Избранное."""
 
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,
@@ -149,8 +150,8 @@ class Favorite(models.Model):
             fields=['user', 'recipe'],
             name='unique_favorite'
         )]
-        verbose_name = 'Любимый рецепт'
-        verbose_name_plural = 'Любимые'
+        verbose_name = 'Избранный рецепт'
+        verbose_name_plural = 'Избранное'
 
     def __str__(self) -> str:
         """Отобращает название в виде Пользователь/Рецепт."""
@@ -158,7 +159,7 @@ class Favorite(models.Model):
 
 
 class ShoppingCart(models.Model):
-    """Добавление рецепта в корзину."""
+    """Добавление рецепта в Список покупок."""
 
     user = models.ForeignKey(User,
                              on_delete=models.CASCADE,
@@ -172,8 +173,8 @@ class ShoppingCart(models.Model):
             fields=['user', 'recipe'],
             name='unique_shopping_card'
         )]
-        verbose_name = 'Корзина'
-        verbose_name_plural = 'Корзины'
+        verbose_name = 'В Списке покупок'
+        verbose_name_plural = 'Списки покупок'
 
     def __str__(self) -> str:
         """Отобращает название в виде Пользователь/Рецепт."""

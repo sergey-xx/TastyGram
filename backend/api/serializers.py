@@ -58,6 +58,21 @@ class UserCreateSerializer(UserSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
 
+    class Meta:
+        model = User
+        fields = ('email',
+                  'id',
+                  'username',
+                  'first_name',
+                  'last_name',
+                  'password')
+        read_only_fields = ('email',
+                            'id',
+                            'username',
+                            'first_name',
+                            'last_name',)
+        extra_kwargs = {'password': {'write_only': True}, }
+
     def validate_email(self, email):
         """Валидация почты."""
         if User.objects.filter(email=email):
@@ -89,21 +104,6 @@ class UserCreateSerializer(UserSerializer):
         """Переопределение create для хэширования паролей."""
         validated_data['password'] = make_password(validated_data['password'])
         return super(UserSerializer, self).create(validated_data)
-
-    class Meta:
-        model = User
-        fields = ('email',
-                  'id',
-                  'username',
-                  'first_name',
-                  'last_name',
-                  'password')
-        read_only_fields = ('email',
-                            'id',
-                            'username',
-                            'first_name',
-                            'last_name',)
-        extra_kwargs = {'password': {'write_only': True}, }
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -205,7 +205,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         model = Recipe
 
     def get_is_favorited(self, obj):
-        """Получение нахождения в Любимых."""
+        """Получение нахождения в Избранном."""
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
@@ -213,7 +213,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return favorite.exists()
 
     def get_is_in_shopping_cart(self, obj):
-        """Получение нахождения в Корзине."""
+        """Получение нахождения в Списке покупок."""
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
@@ -271,13 +271,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             unique.add(tag.id)
         if not tags:
             raise serializers.ValidationError(
-                'Тэги не могут отсутствовать')
+                'Теги не могут отсутствовать')
         return tags
 
     def validate(self, attrs):
         if 'tags' not in attrs:
             raise serializers.ValidationError(
-                'Тэги не могут отсутствовать')
+                'Теги не могут отсутствовать')
 
         if 'recipeingredient' not in attrs:
             raise serializers.ValidationError(
@@ -285,7 +285,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def get_is_favorited(self, obj):
-        """Получение нахождения в Любимых."""
+        """Получение нахождения в Избранном."""
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
@@ -293,7 +293,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return favorite.exists()
 
     def get_is_in_shopping_cart(self, obj):
-        """Получение нахождения в Корзине."""
+        """Получение нахождения в Списке покупок."""
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
@@ -349,7 +349,7 @@ class RecipeFollowSerializer(serializers.ModelSerializer):
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
-    """Сериалайзер добавления Рецепта в Любимые."""
+    """Сериалайзер добавления Рецепта в Избранном."""
 
     name = serializers.StringRelatedField(source='recipe.name')
     cooking_time = serializers.IntegerField(source='recipe.cooking_time',
@@ -457,7 +457,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
-    """Сериалайзер добавления Рецепта в Корзину."""
+    """Сериалайзер добавления Рецепта в Список покупок."""
 
     id = serializers.PrimaryKeyRelatedField(source='recipe', read_only=True)
     name = serializers.StringRelatedField(source='recipe.name', read_only=True)
@@ -491,5 +491,5 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         recipe = recipes.first()
         if ShoppingCart.objects.filter(user=user,
                                        recipe=recipe).exists():
-            raise serializers.ValidationError('Рецепт уже в корзине')
+            raise serializers.ValidationError('Рецепт уже в Списке покупок')
         return attrs

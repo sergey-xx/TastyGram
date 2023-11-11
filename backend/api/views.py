@@ -92,7 +92,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class BaseViewset(viewsets.ModelViewSet):
-    """Базовая модель для Подписки, Любимых, Корзины."""
+    """Базовая модель для Подписки, Избранное, Списка покупок."""
 
     def _get_title_id(self):
         return self.kwargs.get('title_id')
@@ -120,7 +120,7 @@ class BaseViewset(viewsets.ModelViewSet):
 
 
 class FavoriteViewSet(BaseViewset):
-    """Вьюсет добавления в Любимые."""
+    """Вьюсет добавления в Избранное."""
 
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
@@ -133,7 +133,7 @@ class FavoriteViewSet(BaseViewset):
 
 
 class ShoppingCartViewSet(BaseViewset):
-    """Вьюсет добавления в Корзину."""
+    """Вьюсет добавления в Списке покупок."""
 
     queryset = ShoppingCart.objects.all()
     serializer_class = ShoppingCartSerializer

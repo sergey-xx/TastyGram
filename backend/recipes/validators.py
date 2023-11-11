@@ -6,3 +6,10 @@ def time_validator(value):
     if value < 1:
         raise ValidationError(
             'Время приготовления не может быть менее 1 минуты')
+
+
+def amount_validator(value):
+    """Валидатор количества в Игредиента в Рецепте."""
+    if value < 1:
+        raise ValidationError(
+            'Количество не может быть менее 1')

@@ -1,5 +1,5 @@
 from rest_framework.pagination import PageNumberPagination
-from foodgram import settings
+from django.conf import settings
 
 
 class CustomPagination(PageNumberPagination):

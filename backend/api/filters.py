@@ -9,7 +9,7 @@ class RecipeFilter(django_filters.FilterSet):
     Фильтр для запросов к объектам модели Recipe.
 
     Фильтрация осуществляется по slug тэга, id автора
-    нахождении в любимых и в корзине пользователя.
+    нахождении в Избранном и в Списке покупок пользователя.
     """
 
     tags = django_filters.AllValuesMultipleFilter(
@@ -25,6 +25,10 @@ class RecipeFilter(django_filters.FilterSet):
         method='filter_is_favorited',
         widget=BooleanWidget())
 
+    class Meta:
+        model = Recipe
+        fields = ('tags', 'is_in_shopping_cart', 'is_favorited', 'author')
+
     def filter_is_in_shopping_cart(self, queryset, name, value):
         if self.request.user.is_anonymous:
             return queryset
@@ -34,10 +38,6 @@ class RecipeFilter(django_filters.FilterSet):
         if self.request.user.is_anonymous:
             return queryset
         return queryset.filter(favorite__user=self.request.user)
-
-    class Meta:
-        model = Recipe
-        fields = ('tags', 'is_in_shopping_cart', 'is_favorited', 'author')
 
 
 class IngredientFilter(django_filters.FilterSet):

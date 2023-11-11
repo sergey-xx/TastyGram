@@ -9,8 +9,7 @@ class CustomUserAdmin(UserAdmin):
     """Кастомизация админки Пользователей."""
 
     list_display = ('username', 'email', )
-    search_fields = ("email", )
-    # list_filter = ("email", )
+    search_fields = ('username', "email", )
 
 
 admin.site.register(User, CustomUserAdmin)
