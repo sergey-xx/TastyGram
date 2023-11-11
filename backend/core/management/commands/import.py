@@ -1,6 +1,7 @@
-from io import open
 import json
 import os
+from io import open
+
 from django.core.management.base import BaseCommand
 
 from recipes.models import Ingredient as Ingrt

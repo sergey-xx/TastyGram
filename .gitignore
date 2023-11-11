@@ -169,3 +169,6 @@ frontend/
 
 # vscode
 .vscode/
+/.vscode
+/.vscode/
+.vscode

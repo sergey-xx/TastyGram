@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from .validators import time_validator, amount_validator
+from .validators import amount_validator, time_validator
 
 User = get_user_model()
 
@@ -56,12 +56,6 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(Ingredient,
                                          through='RecipeIngredient',
                                          blank=False,)
-    is_favorited = models.ManyToManyField(User,
-                                          through='Favorite',
-                                          related_name='recipes')
-    is_in_shopping_cart = models.ManyToManyField(User,
-                                                 through='ShoppingCart',
-                                                 related_name='products')
     pub_date = models.DateTimeField('Дата публикации',
                                     auto_now_add=True)
 

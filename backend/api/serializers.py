@@ -1,15 +1,15 @@
-import re
 import base64
+import re
+
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from django.conf import settings
 
-
-from recipes.models import (Tag, Recipe, RecipeIngredient, Ingredient,
-                            Favorite, ShoppingCart, Follow,)
+from recipes.models import (Favorite, Follow, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 
 User = get_user_model()
 
@@ -318,9 +318,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         items = validated_data.pop('recipeingredient')
-        # if not items:
-        #     raise serializers.ValidationError(
-        #         'Ингредиенты не могут быть пустыми')
         RecipeIngredient.objects.filter(recipe=instance).delete()
         instance = super().update(instance, validated_data)
         self.create_ingredient(items, instance)
@@ -416,14 +413,13 @@ class FollowSerializer(serializers.ModelSerializer):
         model = Follow
 
     def get_is_subscribed(self, obj):
-        if Follow.objects.filter(follower=self.context.get('request').user,
-                                 author=obj.author).exists():
-            return True
-        return False
+        return Follow.objects.filter(follower=self.context.get('request').user,
+                                 author=obj.author).exists()
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         recipes = representation.get('recipes')
+        print(recipes)
         length = len(recipes)
         representation['recipes_count'] = length
         limit = self.context.get('request').query_params.get('recipes_limit')

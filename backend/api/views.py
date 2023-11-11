@@ -1,23 +1,24 @@
-from django.db.models import Count
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, mixins, status
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.decorators import action
 from rest_framework.views import APIView
 
 from core.pagination import CustomPagination
-from recipes.models import (Tag, Recipe, Favorite, Follow,
-                            Ingredient, ShoppingCart)
-from .serializers import (UserSerializer, TagSerializer, RecipeSerializer,
-                          RecipeCreateSerializer, UserMeSerializer,
-                          FavoriteSerializer, FollowSerializer,
-                          IngredientSerializer, ShoppingCartSerializer)
+from recipes.models import (Favorite, Follow, Ingredient, Recipe, ShoppingCart,
+                            Tag)
+
+from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsOwnerOrReadOnly
-from .filters import RecipeFilter, IngredientFilter
+from .serializers import (FavoriteSerializer, FollowSerializer,
+                          IngredientSerializer, RecipeCreateSerializer,
+                          RecipeSerializer, ShoppingCartSerializer,
+                          TagSerializer, UserMeSerializer, UserSerializer)
 
 User = get_user_model()
 
