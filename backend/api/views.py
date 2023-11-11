@@ -8,7 +8,6 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.views import APIView
-from rest_framework import serializers
 
 from core.pagination import CustomPagination
 from recipes.models import (Tag, Recipe, Favorite, Follow,
@@ -92,36 +91,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class FavoriteViewSet(viewsets.ModelViewSet):
-    """Вьюсет добавления в Любимые."""
+class BaseViewset(viewsets.ModelViewSet):
+    """Базовая модель для Подписки, Любимых, Корзины."""
 
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteSerializer
-    permission_classes = (IsAuthenticated,)
-    http_method_names = ['post', 'delete']
-    lookup_field = 'id'
-    pagination_class = CustomPagination
+    def _get_title_id(self):
+        return self.kwargs.get('title_id')
 
-    def _get_title(self):
-        title_id = self.kwargs.get('title_id')
-        return get_object_or_404(Recipe, id=title_id)
-
-    def create(self, request, *args, **kwargs):
-        # recipe = self._get_title()
-        # result = Favorite.objects.filter(user=self.request.user,
-        #                                  recipe=recipe).exists()
-        # if result:
-        #     raise serializers.ValidationError('Рецепт уже в избранном')
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data,
-                        status=status.HTTP_201_CREATED,
-                        headers=headers)
+    def _get_title(self, title_model):
+        return get_object_or_404(title_model, id=self._get_title_id())
 
     def perform_create(self, serializer):
-        recipe = self._get_title()
+        recipe = self._get_title(self.title_model)
         serializer.save(user=self.request.user,
                         recipe=recipe,)
 
@@ -129,50 +109,53 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             detail=True,
             permission_classes=[IsAuthenticated])
     def delete(self, request, *args, **kwargs):
-        recipe_id = self.kwargs.get('title_id')
-        titles = Recipe.objects.filter(id=recipe_id)
-        get_object_or_404(Recipe, id=recipe_id)
-        if not titles.exists():
-            raise serializers.ValidationError('Рецепт не существует')
-        # title_id = kwargs.get('title_id')
-        favorite = Favorite.objects.filter(recipe=recipe_id,
-                                           user=self.request.user)
-        if favorite.exists():
-            favorite.first().delete()
+        recipe = self._get_title(self.title_model)
+        model_items = self.model.objects.filter(recipe=recipe,
+                                                user=self.request.user)
+        if model_items.exists():
+            model_items.first().delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response('Вы не были подписаны.',
+        return Response('Объект не существует.',
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-class FollowViewSet(viewsets.ModelViewSet):
-    """Вьюсет добавления и просмотра Подписки."""
+class FavoriteViewSet(BaseViewset):
+    """Вьюсет добавления в Любимые."""
+
+    queryset = Favorite.objects.all()
+    serializer_class = FavoriteSerializer
+    model = Favorite
+    title_model = Recipe
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['post', 'delete']
+    lookup_field = 'id'
+    pagination_class = CustomPagination
+
+
+class ShoppingCartViewSet(BaseViewset):
+    """Вьюсет добавления в Корзину."""
+
+    queryset = ShoppingCart.objects.all()
+    serializer_class = ShoppingCartSerializer
+    permission_classes = (IsAuthenticated,)
+    http_method_names = ['post', 'delete']
+    pagination_class = CustomPagination
+    model = ShoppingCart
+    title_model = Recipe
+
+
+class FollowViewSet(BaseViewset):
+    """Вьюсет добавления в Подписки."""
 
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post', 'delete']
-
-    def _get_title(self):
-        title_id = self.kwargs.get('title_id')
-        return get_object_or_404(User, id=title_id)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        # author = self._get_title()
-        # if author == self.request.user:
-        #     raise serializers.ValidationError('Нельзя подписаться на самого '
-        #                                       'себя!')
-        # if Follow.objects.filter(follower=self.request.user,
-        #                          author=author).exists():
-        #     return Response(status=status.HTTP_400_BAD_REQUEST)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED,
-                        headers=headers)
+    model = Follow
+    title_model = User
 
     def perform_create(self, serializer):
-        author = self._get_title()
+        author = self._get_title(self.title_model)
         serializer.save(follower=self.request.user,
                         author=author,)
 
@@ -180,26 +163,20 @@ class FollowViewSet(viewsets.ModelViewSet):
             detail=True,
             permission_classes=[IsAuthenticated])
     def delete(self, request, *args, **kwargs):
-        author = kwargs.get('title_id')
-        get_object_or_404(User,
-                          id=author)
-        follow = Follow.objects.filter(author=author,
-                                       follower=self.request.user)
-        if not follow.exists():
-            raise serializers.ValidationError('Вы не были подписаны')
-        # follow = get_object_or_404(Follow,
-        #                            author=author,
-        #                            follower=self.request.user)
-
-        follow.first().delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        author = self._get_title(self.title_model)
+        model_items = self.model.objects.filter(author=author,
+                                                follower=self.request.user)
+        if model_items.exists():
+            model_items.first().delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response('Объект не существует.',
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class FollowListViewSet(mixins.ListModelMixin,
                         viewsets.GenericViewSet):
     """Вьюсет просмотра списка Подписок."""
 
-    # queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
     pagination_class = CustomPagination
@@ -221,48 +198,3 @@ class IngredientViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
     filterset_fields = ('name',)
-
-
-class ShoppingCartViewSet(viewsets.ModelViewSet):
-    """Вьюсет добавления и просмотра Корзины."""
-
-    queryset = ShoppingCart.objects.all()
-    serializer_class = ShoppingCartSerializer
-    permission_classes = (IsAuthenticated,)
-    http_method_names = ['post', 'delete']
-    pagination_class = CustomPagination
-
-    def _get_title(self):
-        title_id = self.kwargs.get('title_id')
-        return get_object_or_404(Recipe, id=title_id)
-
-    def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        titles = Recipe.objects.filter(id=title_id)
-        if not titles.exists():
-            raise serializers.ValidationError('Рецепт не существует')
-        recipe = self._get_title()
-        if ShoppingCart.objects.filter(user=self.request.user,
-                                       recipe=recipe).count() > 0:
-            raise serializers.ValidationError('Рецепт уже в корзине')
-        serializer.save(user=self.request.user,
-                        recipe=recipe,)
-
-    @action(methods=['delete'], detail=True,
-            permission_classes=[IsAuthenticated])
-    def delete(self, request, *args, **kwargs):
-        title_id = self.kwargs.get('title_id')
-        recipe = get_object_or_404(Recipe, id=title_id)
-        title_id = self.kwargs.get('title_id')
-        titles = Recipe.objects.filter(id=title_id)
-        if not titles.exists():
-            raise serializers.ValidationError('Рецепт не существует')
-        if ShoppingCart.objects.filter(recipe=recipe,
-                                       user=self.request.user).count() < 1:
-            raise serializers.ValidationError('Рецепт не был ранее добавлен '
-                                              'в корзину')
-        shopping_cart = get_object_or_404(ShoppingCart,
-                                          recipe=recipe,
-                                          user=self.request.user)
-        shopping_cart.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)

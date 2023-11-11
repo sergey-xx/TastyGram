@@ -480,3 +480,16 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
                             'cooking_time'
                             )
         model = ShoppingCart
+
+    def validate(self, attrs):
+        recipe_id = self.context.get(
+            'request').parser_context.get('kwargs').get('title_id')
+        recipes = Recipe.objects.filter(id=recipe_id)
+        if not recipes.exists():
+            raise serializers.ValidationError('Рецепт не существует')
+        user = self.context.get('request').user
+        recipe = recipes.first()
+        if ShoppingCart.objects.filter(user=user,
+                                       recipe=recipe).exists():
+            raise serializers.ValidationError('Рецепт уже в корзине')
+        return attrs
