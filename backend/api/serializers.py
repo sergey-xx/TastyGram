@@ -414,7 +414,7 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         return Follow.objects.filter(follower=self.context.get('request').user,
-                                 author=obj.author).exists()
+                                     author=obj.author).exists()
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

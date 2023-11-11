@@ -60,7 +60,6 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-db*.sqlite3
 db.json
 
 # Flask stuff:
@@ -168,7 +167,9 @@ static/
 frontend/
 
 # vscode
-.vscode/
-/.vscode
-/.vscode/
-.vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
