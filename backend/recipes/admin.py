@@ -42,6 +42,7 @@ class IngredientInlineAdmin(admin.TabularInline):
     model = Recipe.ingredients.through
     min_num = 1
 
+
 class RecipeAdmin(admin.ModelAdmin):
     """Кастомизация админки модели Рецептов."""
 
