@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
@@ -12,7 +11,6 @@ from rest_framework.views import APIView
 from core.pagination import CustomPagination
 from recipes.models import (Favorite, Follow, Ingredient, Recipe, ShoppingCart,
                             Tag)
-
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (FavoriteSerializer, FollowSerializer,
@@ -148,7 +146,6 @@ class ShoppingCartViewSet(BaseViewset):
 class FollowViewSet(BaseViewset):
     """Вьюсет добавления в Подписки."""
 
-    queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post', 'delete']
@@ -183,9 +180,9 @@ class FollowListViewSet(mixins.ListModelMixin,
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        queryset = (
-            Follow.objects.annotate(recipes_count=Count('author__recipe')))
-        return queryset.filter(follower=self.request.user)
+        return (
+            Follow.objects.filter(
+                follower=self.request.user).prefetch_related('author__recipe'))
 
 
 class IngredientViewSet(viewsets.ModelViewSet):

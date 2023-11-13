@@ -385,10 +385,11 @@ class FollowSerializer(serializers.ModelSerializer):
     username = serializers.StringRelatedField(source='author.username')
     first_name = serializers.StringRelatedField(source='author.first_name')
     last_name = serializers.StringRelatedField(source='author.last_name')
-    recipes = RecipeFollowSerializer(read_only=True,
-                                     many=True, source='author.recipe')
+    # recipes = RecipeFollowSerializer(read_only=True,
+    #                                  many=True, source='author.recipe')
+    recipes = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
-    recipes_count = serializers.IntegerField(read_only=True)
+    recipes_count = serializers.SerializerMethodField()
     email = serializers.StringRelatedField(source='author.email')
 
     class Meta:
@@ -416,18 +417,18 @@ class FollowSerializer(serializers.ModelSerializer):
         return Follow.objects.filter(follower=self.context.get('request').user,
                                      author=obj.author).exists()
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        recipes = representation.get('recipes')
-        print(recipes)
-        length = len(recipes)
-        representation['recipes_count'] = length
+    def get_recipes(self, obj):
         limit = self.context.get('request').query_params.get('recipes_limit')
+        recipes = obj.author.recipe.all()
         if limit:
-            limit = int(limit)
-            if length > limit:
-                representation['recipes'] = recipes[:limit]
-        return representation
+            recipes = recipes[:int(limit)]
+        serializer = RecipeFollowSerializer(recipes,
+                                            read_only=True,
+                                            many=True)
+        return serializer.data
+
+    def get_recipes_count(self, obj):
+        return obj.author.recipe.all().count()
 
     def validate(self, attrs):
         author_id = int(self.context.get(

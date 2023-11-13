@@ -15,5 +15,3 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         objects = Follow.objects.annotate(count=Count('author__recipe'))
         for object in objects:
-            print(object.count)
-            print(object)

@@ -14,12 +14,10 @@ class DownloadViewSet(APIView):
 
     def merge_shopping_cart(self):
         """Генерирует список словарей с покупками."""
-        shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
-        recipes = []
-        for item in shopping_cart:
-            recipes.append(item.recipe)
+        shopping_cart = ShoppingCart.objects.filter(
+            user=self.request.user).values('recipe')
         items = RecipeIngredient.objects.filter(
-            recipe__in=recipes
+            recipe__in=shopping_cart
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit'
