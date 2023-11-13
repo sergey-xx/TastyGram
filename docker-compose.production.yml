@@ -11,11 +11,13 @@ services:
   db:
     image: postgres:13.10
     env_file: .env
+    restart: always
     volumes:
       - pg_data_production:/var/lib/postgresql/data/
   backend:
     image: sergeyxx/foodgram_backend
     env_file: .env
+    restart: always
     volumes:
       - static_volume:/backend_static/
       - media_volume:/media/
@@ -29,6 +31,7 @@ services:
   gateway:
     image: sergeyxx/foodgram_gateway
     env_file: .env
+    restart: always
     volumes:
       - static_volume:/staticfiles/
       - media_volume:/media/
