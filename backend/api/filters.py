@@ -1,5 +1,5 @@
 import django_filters
-from django_filters.widgets import BooleanWidget
+from django_filters.rest_framework import BooleanFilter
 
 from recipes.models import Ingredient, Recipe
 
@@ -15,15 +15,13 @@ class RecipeFilter(django_filters.FilterSet):
     tags = django_filters.AllValuesMultipleFilter(
         field_name='tags__slug', lookup_expr='iexact')
 
-    is_in_shopping_cart = django_filters.BooleanFilter(
+    is_in_shopping_cart = BooleanFilter(
         field_name='is_in_shopping_cart',
-        method='filter_is_in_shopping_cart',
-        widget=BooleanWidget())
+        method='filter_is_in_shopping_cart',)
 
-    is_favorited = django_filters.BooleanFilter(
+    is_favorited = BooleanFilter(
         field_name='is_favorited',
-        method='filter_is_favorited',
-        widget=BooleanWidget())
+        method='filter_is_favorited',)
 
     class Meta:
         model = Recipe
