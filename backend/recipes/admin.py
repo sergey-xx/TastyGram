@@ -17,7 +17,7 @@ class TagAdmin(admin.ModelAdmin):
 class IngredientAdmin(admin.ModelAdmin):
     """Кастомизация админки модели Ингредиентов."""
 
-    list_display = ('pk', 'name', 'measurement_unit')
+    list_display = ('name', 'measurement_unit')
     search_fields = ('name',)
 
 
@@ -40,20 +40,17 @@ class IngredientInlineAdmin(admin.TabularInline):
     """Класс для вывода Ингредиентов."""
 
     model = Recipe.ingredients.through
-
+    min_num = 1
 
 class RecipeAdmin(admin.ModelAdmin):
     """Кастомизация админки модели Рецептов."""
 
     inlines = (IngredientInlineAdmin, TagInlineAdmin,)
-    list_display = ('id',
+    list_display = ('name',
                     'author',
-                    'name',
                     'text',
                     'cooking_time',
                     'get_tag',
-                    # 'get_in_shopping_card',
-                    # 'get_is_favorited',
                     'pub_date',
                     'get_favorite_counter',
                     )
