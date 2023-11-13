@@ -163,9 +163,6 @@ yarn-error.log*
 # static
 static/
 
-# frontend
-frontend/
-
 # vscode
 .vscode/*
 .vscode/settings.json

@@ -81,3 +81,11 @@ npm run start
 - SSH_KEY (Закрытый ключ VPS-сервера)
 - SSH_PASSPHRASE (Пароль VPS-сервера)
 - TELEGRAM_TOKEN (Токен телеграм-канала для уведомлений)
+
+## Данные о деплое проекта:
+- repo_owner: sergey-xx
+- server_ip: 158.160.81.84
+- fodmram_domain: https://tastygram.ddns.net
+- dockerhub_username: sergeyxx
+- admin_username: admin
+- password: yandex11
