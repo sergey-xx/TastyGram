@@ -135,6 +135,19 @@ class TagSerializer(serializers.ModelSerializer):
                 return color
 
 
+class Base64ImageField(serializers.ImageField):
+    """Сериализатор картинок в HEX."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+
+            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
+
+        return super().to_internal_value(data)
+
+
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     """Вспомогательный сериализатор создания Рецепт/Ингредиент."""
 
@@ -175,19 +188,6 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
                 'Ингредиенты не могут повторяться!')
         self.unique_set.add(ingredient)
         return attrs
-
-
-class Base64ImageField(serializers.ImageField):
-    """Сериализатор картинок в HEX."""
-
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-        return super().to_internal_value(data)
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -263,9 +263,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, ingredients):
         """Валидация ингредиентов."""
-        RecipeIngredientCreateSerializer(
-            data=ingredients,
-            many=True).is_valid()
         RecipeIngredientCreateSerializer.unique_set.clear()
         if not ingredients:
             raise serializers.ValidationError(
