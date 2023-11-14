@@ -164,19 +164,6 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
                 'Количество не может быть менее 1')
         return amount
 
-    def validate_id(self, ids):
-        """Валидация ингредиентов."""
-        unique = set()
-        for ident in ids:
-            if ident in unique:
-                raise serializers.ValidationError('Ингредиенты не могут '
-                                                  'повторяться.')
-            unique.add(ident)
-        if not id:
-            raise serializers.ValidationError(
-                'Ингредиенты не могут отсутствовать.')
-        return ids
-
 
 class Base64ImageField(serializers.ImageField):
     """Сериализатор картинок в HEX."""
@@ -264,12 +251,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, ingredients):
         """Валидация ингредиентов."""
-        # unique = set()
-        # for ingredient in ingredients:
-        #     if ingredient.get('ingredient').get('id').id in unique:
-        #         raise serializers.ValidationError('Ингредиенты не могут '
-        #                                           'повторяться.')
-        #     unique.add(ingredient.get('ingredient').get('id').id)
+        unique = set()
+        for ingredient in ingredients:
+            if ingredient.get('ingredient').get('id').id in unique:
+                raise serializers.ValidationError('[[Ингредиенты не могут '
+                                                  'повторяться]].')
+            unique.add(ingredient.get('ingredient').get('id').id)
         if not ingredients:
             raise serializers.ValidationError(
                 'Ингредиенты не могут отсутствовать.')
@@ -398,8 +385,6 @@ class FollowSerializer(serializers.ModelSerializer):
     username = serializers.StringRelatedField(source='author.username')
     first_name = serializers.StringRelatedField(source='author.first_name')
     last_name = serializers.StringRelatedField(source='author.last_name')
-    # recipes = RecipeFollowSerializer(read_only=True,
-    #                                  many=True, source='author.recipe')
     recipes = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
