@@ -162,6 +162,7 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
     def validate_amount(self, amount):
         """Валидация Количества Ингредиента."""
         if amount < 1:
+            self.unique_set.clear()
             raise serializers.ValidationError(
                 'Количество не может быть менее 1')
         return amount
