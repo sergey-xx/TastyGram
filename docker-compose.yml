@@ -4,6 +4,7 @@ volumes:
   pg_data:
   static_volume:
   media_volume:
+  data_volume:
 
 services:
   db:
@@ -11,6 +12,15 @@ services:
     env_file: .env
     volumes:
       - pg_data:/var/lib/postgresql/data/
+  backend:
+    build: ./backend/
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - static_volume:/backend_static/
+      - media_volume:/media/
+      - data_volume:/data/
   frontend:
     env_file: .env
     build:
@@ -23,7 +33,7 @@ services:
     build: ./infra/
     env_file: .env
     ports:
-      - "8021:80"
+      - 8021:80
     volumes:
       - static_volume:/staticfiles/
       - media_volume:/media/
