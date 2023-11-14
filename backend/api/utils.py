@@ -23,7 +23,7 @@ class DownloadViewSet(APIView):
             'ingredient__measurement_unit'
         ).annotate(
             total_amount=Sum('amount')
-        )
+        ).order_by('ingredient__name')
         return items
 
     def get(self, request):
