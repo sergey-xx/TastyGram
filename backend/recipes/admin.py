@@ -34,6 +34,7 @@ class TagInlineAdmin(admin.TabularInline):
     """Класс для вывода Тегов."""
 
     model = Recipe.tags.through
+    min_num = 1
 
 
 class IngredientInlineAdmin(admin.TabularInline):

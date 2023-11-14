@@ -21,9 +21,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1',
                  '0.0.0.0',
-                 '158.160.81.84',
+                 os.getenv('SECRET_KEY'),
                  'localhost',
-                 'tastygram.ddns.net']
+                 os.getenv('DOMAIN_NAME')]
 
 # Application definition
 
