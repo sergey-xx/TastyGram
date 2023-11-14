@@ -255,11 +255,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         for ingredient in ingredients:
             if ingredient.get('ingredient').get('id').id in unique:
                 raise serializers.ValidationError('Ингредиенты не могут '
-                                                  'повторяться')
+                                                  'повторяться.')
             unique.add(ingredient.get('ingredient').get('id').id)
         if not ingredients:
             raise serializers.ValidationError(
-                'Ингредиенты не могут отсутствовать')
+                'Ингредиенты не могут отсутствовать.')
         return ingredients
 
     def validate_tags(self, tags):
