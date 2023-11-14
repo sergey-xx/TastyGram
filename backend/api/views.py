@@ -8,7 +8,6 @@ from rest_framework.permissions import (AllowAny, IsAuthenticated,
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.pagination import CustomPagination
 from recipes.models import (Favorite, Follow, Ingredient, Recipe, ShoppingCart,
                             Tag)
 from .filters import IngredientFilter, RecipeFilter
@@ -33,7 +32,6 @@ class UsersViewSet(mixins.UpdateModelMixin,
     serializer_class = UserSerializer
     permission_classes = (AllowAny, )
     http_method_names = ['get', 'post']
-    pagination_class = CustomPagination
 
 
 class UserMe(APIView):
@@ -72,7 +70,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsOwnerOrReadOnly)
-    pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -128,7 +125,6 @@ class FavoriteViewSet(BaseViewset):
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post', 'delete']
     lookup_field = 'id'
-    pagination_class = CustomPagination
 
 
 class ShoppingCartViewSet(BaseViewset):
@@ -138,7 +134,6 @@ class ShoppingCartViewSet(BaseViewset):
     serializer_class = ShoppingCartSerializer
     permission_classes = (IsAuthenticated,)
     http_method_names = ['post', 'delete']
-    pagination_class = CustomPagination
     model = ShoppingCart
     title_model = Recipe
 
@@ -177,7 +172,6 @@ class FollowListViewSet(mixins.ListModelMixin,
 
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
-    pagination_class = CustomPagination
 
     def get_queryset(self):
         return (
