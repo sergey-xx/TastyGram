@@ -164,6 +164,19 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
                 'Количество не может быть менее 1')
         return amount
 
+    def validate_id(self, ids):
+        """Валидация ингредиентов."""
+        unique = set()
+        for ident in ids:
+            if ident in unique:
+                raise serializers.ValidationError('Ингредиенты не могут '
+                                                  'повторяться.')
+            unique.add(ident)
+        if not id:
+            raise serializers.ValidationError(
+                'Ингредиенты не могут отсутствовать.')
+        return ids
+
 
 class Base64ImageField(serializers.ImageField):
     """Сериализатор картинок в HEX."""
@@ -251,12 +264,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, ingredients):
         """Валидация ингредиентов."""
-        unique = set()
-        for ingredient in ingredients:
-            if ingredient.get('ingredient').get('id').id in unique:
-                raise serializers.ValidationError('Ингредиенты не могут '
-                                                  'повторяться.')
-            unique.add(ingredient.get('ingredient').get('id').id)
+        # unique = set()
+        # for ingredient in ingredients:
+        #     if ingredient.get('ingredient').get('id').id in unique:
+        #         raise serializers.ValidationError('Ингредиенты не могут '
+        #                                           'повторяться.')
+        #     unique.add(ingredient.get('ingredient').get('id').id)
         if not ingredients:
             raise serializers.ValidationError(
                 'Ингредиенты не могут отсутствовать.')
