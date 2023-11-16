@@ -21,8 +21,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1',
                  '0.0.0.0',
-                 os.getenv('SECRET_KEY'),
                  'localhost',
+                 os.getenv('SERVER_IP'),
                  os.getenv('DOMAIN_NAME')]
 
 # Application definition
