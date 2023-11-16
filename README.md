@@ -23,7 +23,31 @@ Backand: Django REST API
 git clone git@github.com:sergey-xx/foodgram-project-react.git
 ```
 
-## Запуск Backend:
+## Локальный запуск проекта:
+- установить Docker,
+- в корневой папке проекта выполнить:
+```
+docker compose up
+```
+Выполнить в консоли команду:
+```
+docker container exec foodgram-project-react-backend-1 python manage.py migrate
+```
+Для создания суперпользователя выполнить команду:
+```
+docker container exec -it  foodgram-project-react-backend-1 python manage.py createsuperuser --username admin --email admin@admin.ru
+```
+Для импорта базы ингредиентов выполнить команду:
+```
+docker container exec foodgram-project-react-backend-1 python manage.py import
+```
+
+
+- Фронт будет доступен по адресу: http://localhost:8021/
+-  Админка: http://localhost:8021/admin/
+-  API: http://localhost:8021/api/
+
+## Отдельный запуск Backend:
 - Cоздать и активировать виртуальное окружение:
 
 ```
@@ -43,8 +67,14 @@ python3 -m pip install --upgrade pip
 ```
 pip install -r requirements.txt
 ```
-- Закомментировать postgres DB в settyngs.py, раскомментировать SQLite.
-
+- Закомментировать postgres DB в settyngs.py, добавить дефолтную SQLite:
+```
+      'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+```
 - Выполнить миграции:
 
 ```
@@ -53,7 +83,7 @@ python3 manage.py migrate
 - Запуск сервера:
 
 ```
-python3 manage.py migrate
+python3 manage.py runserver
 ```
 ## Frontend и документация
 - Находясь в директории infra, выполнить команду:
