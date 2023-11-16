@@ -94,9 +94,16 @@ docker compose up
 После запуска контейнера nginx Фронт будет доступен по адресу: http://localhost
 Документацию на API можно будет увидеть по адресу: http://localhost/api/docs/redoc.html
 
-### Для запуска на сервере рекомендуется использовать:
+### Для запуска на сервере :
 
-- Веб-сервер: Nginx
+- Установить Docker
+- Установить Веб-сервер: Nginx
+- Создать файл .env (см. образецenv.example)
+- загрузить в ту же папку docker-compose.production.yml
+- выполнить 
+```
+sudo docker compose -f docker-compose.production.yml up -d
+```
 
 ## Проект при деплое на Git/master пушится в Docker-контейнеры и разворачивается на VPS.
 ### В состав проекта входят 4 контейнера:
