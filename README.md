@@ -23,7 +23,7 @@ Backand: Django REST API
 git clone git@github.com:sergey-xx/foodgram-project-react.git
 ```
 
-## Локальный запуск проекта:
+### Локальный запуск проекта:
 - установить Docker,
 - в корневой папке проекта выполнить:
 ```
@@ -47,7 +47,7 @@ docker container exec foodgram-project-react-backend-1 python manage.py import
 -  Админка: http://localhost:8021/admin/
 -  API: http://localhost:8021/api/
 
-## Отдельный запуск Backend:
+### Отдельный запуск Backend:
 - Cоздать и активировать виртуальное окружение:
 
 ```
@@ -85,7 +85,7 @@ python3 manage.py migrate
 ```
 python3 manage.py runserver
 ```
-## Frontend и документация
+### Frontend и документация
 - Находясь в директории infra, выполнить команду:
 
 ```
@@ -98,7 +98,7 @@ docker compose up
 
 - Установить Docker
 - Установить Веб-сервер: Nginx
-- Создать файл .env (см. образецenv.example)
+- Создать файл .env (см. образец env.example)
 - загрузить в ту же папку docker-compose.production.yml
 - выполнить 
 ```
