@@ -338,20 +338,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return representation
 
 
-class RecipeFollowSerializer(serializers.ModelSerializer):
-    """Сериалайзер добавления связки Рецепт/Подписка."""
-
-    image = Base64ImageField(required=False, allow_null=True)
-
-    class Meta:
-        fields = ('id',
-                  'name',
-                  'image',
-                  'cooking_time'
-                  )
-        model = Recipe
-
-
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериалайзер добавления Рецепта в Избранном."""
 
